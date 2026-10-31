@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --chassis: #1f2a37;
+  --chassis-hi: #2c3a4b;
+  --chassis-lo: #121a24;
+  --key: #e8edf2;
+  --key-text: #1b2633;
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #0b1220;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Temas de visualizador por modelo */
+.scr {
+  --lcd-bg: #dfe7ee;
+  --lcd-fg: #0e2a4a;
+  --lcd-dim: #5a7390;
+  --lcd-line: #9fb2c6;
+  --lcd-sel-bg: #0e2a4a;
+  --lcd-sel-fg: #eef4fa;
+  --lcd-ok: #13703e;
+  --lcd-warn: #a35a00;
+  --lcd-bad: #b3121f;
+  --dot: #0b1f38;
+  background: var(--lcd-bg);
+  color: var(--lcd-fg);
+}
+.scr.classic {
+  --lcd-bg: #a9bb8c;
+  --lcd-fg: #17240f;
+  --lcd-dim: #4d6236;
+  --lcd-line: #7f9466;
+  --lcd-sel-bg: #17240f;
+  --lcd-sel-fg: #b9cb9c;
+  --lcd-ok: #17240f;
+  --lcd-warn: #4a3a00;
+  --lcd-bad: #5a0b00;
+  --dot: #111c0b;
+}
+.scr.m9040 {
+  --lcd-bg: #0c1a29;
+  --lcd-fg: #d3e9ff;
+  --lcd-dim: #7f9bb8;
+  --lcd-line: #29425e;
+  --lcd-sel-bg: #4fb3ff;
+  --lcd-sel-fg: #06121f;
+  --lcd-ok: #5ee59a;
+  --lcd-warn: #ffc457;
+  --lcd-bad: #ff6b6b;
+  --dot: #e8f4ff;
+}
+
+.lcd-font {
+  font-family: 'Courier New', ui-monospace, Menlo, Consolas, monospace;
+}
+.c-dim { color: var(--lcd-dim); }
+.c-ok { color: var(--lcd-ok); }
+.c-warn { color: var(--lcd-warn); }
+.c-bad { color: var(--lcd-bad); }
+.b-line { border-color: var(--lcd-line); }
+.bg-sel { background: var(--lcd-sel-bg); color: var(--lcd-sel-fg); }
+.bg-lcd { background: var(--lcd-bg); }
+
+.lcd-btn {
+  border: 1px solid var(--lcd-line);
+  border-radius: 3px;
+  padding: 2px 6px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1.05;
+  text-align: center;
+}
+.lcd-btn:active,
+.lcd-btn.on {
+  background: var(--lcd-sel-bg);
+  color: var(--lcd-sel-fg);
+}
+.lcd-btn:disabled {
+  opacity: 0.4;
+}
+.lcd-row {
+  border-bottom: 1px dashed var(--lcd-line);
+}
+
+/* Teclas físicas del chasis */
+.hwkey {
+  background: linear-gradient(180deg, #f4f7fa 0%, #d5dde5 100%);
+  color: var(--key-text);
+  border-radius: 8px;
+  box-shadow: 0 2px 0 #8796a6, inset 0 1px 0 #fff;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: transform 0.05s;
+}
+.hwkey:active,
+.hwkey.pressed {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 #8796a6, inset 0 1px 0 #fff;
+}
+.hwkey.green { background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%); color: #052e16; box-shadow: 0 2px 0 #14532d; }
+.hwkey.red { background: linear-gradient(180deg, #fb7185 0%, #dc2626 100%); color: #fff; box-shadow: 0 2px 0 #7f1d1d; }
+.hwkey.blue { background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 100%); color: #04263b; box-shadow: 0 2px 0 #0c4a6e; }
+.hwkey.amber { background: linear-gradient(180deg, #fde68a 0%, #f59e0b 100%); color: #3b2300; box-shadow: 0 2px 0 #78350f; }
+
+.led {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2b3644;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.led.green { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.led.red { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+.led.amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+.blink { animation: blink 0.8s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+
+.conveyor {
+  background-image: repeating-linear-gradient(90deg, #3b4756 0 6px, #2a3440 6px 12px);
+  animation: belt var(--belt-dur, 1s) linear infinite;
+}
+@keyframes belt { from { background-position: 0 0; } to { background-position: 12px 0; } }
+
+.scroll-y {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.scroll-x::-webkit-scrollbar { display: none; }
+
+@keyframes pop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.pop { animation: pop 0.12s ease-out; }
