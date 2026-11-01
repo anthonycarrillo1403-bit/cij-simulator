@@ -53,7 +53,7 @@ function Stepper({ label, value, unit, onStep, fine = 1, coarse = 10 }) {
 export default function LineDrawer({ open, onClose, focus }) {
   const { state, dispatch } = useStore()
   const [frame, setFrame] = useState('PED-00123')
-  const is9040 = state.ui.machine === 'M9040'
+  const twinJets = state.hw.head.jets === 2
   const setHw = (path, value) => dispatch({ type: 'SET_HW', path, value })
   const diag = state.diag.running
   const diagPct = diag ? Math.round((state.diag.progress / DIAG_MS[diag]) * 100) : 0
@@ -113,7 +113,7 @@ export default function LineDrawer({ open, onClose, focus }) {
         </div>
         </Section>
 
-        <Section id="pot" focus={focus} title={is9040 ? 'Cabezal: potenciómetro de quiebra (chorros 1.1 / 1.2)' : 'Cabezal: potenciómetro de quiebra'}>
+        <Section id="pot" focus={focus} title={twinJets ? 'Cabezal: potenciómetro de quiebra (chorros 1.1 / 1.2)' : 'Cabezal: potenciómetro de quiebra (chorro 1.1)'}>
         <div className="mb-1 text-[10.5px] text-slate-400">Vista con lupa (estroboscopio). Gira el potenciómetro hasta que el punto de quiebra quede en el electrodo de carga (8-10 gotas, fase 00111100).</div>
         <JetView live={L} running={running || state.jetState === 'STARTING'} eht={L.eht} printing={canPrint(state)} className="h-[64px] shrink-0" />
         <div className="grid grid-cols-3 gap-1 text-center text-[10.5px]">
@@ -129,7 +129,7 @@ export default function LineDrawer({ open, onClose, focus }) {
         </div>
         </Section>
 
-        <Section id="cams" focus={focus} title={is9040 ? 'Cabezal: excéntricas del cañón (centrado en el canal)' : 'Cabezal: levas del cañón (centrado en el canal)'}>
+        <Section id="cams" focus={focus} title="Cabezal: excéntricas del cañón (centrado en el canal)">
           <Stepper label="Horizontal" value={state.hw.jet.alignX} unit=" µm" fine={5} coarse={25} onStep={(d) => setHw('jet.alignX', Math.max(-200, Math.min(200, state.hw.jet.alignX + d)))} />
           <Stepper label="Vertical" value={state.hw.jet.alignY} unit=" µm" fine={5} coarse={25} onStep={(d) => setHw('jet.alignY', Math.max(-200, Math.min(200, state.hw.jet.alignY + d)))} />
           <div className="text-[10.5px] text-slate-300">
@@ -152,7 +152,7 @@ export default function LineDrawer({ open, onClose, focus }) {
           </div>
         </Section>
 
-        {is9040 && (
+        {(
           <Section id="v24" focus={focus} title="Terminal V24 (ordenador del ERP)">
             <div className="flex gap-1">
               <input value={frame} onChange={(e) => setFrame(e.target.value.toUpperCase().slice(0, 32))} className="min-w-0 flex-1 rounded bg-black/40 px-1.5 py-1 font-mono text-[12px] text-white" />

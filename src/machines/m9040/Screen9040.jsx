@@ -302,9 +302,12 @@ function drawEdit(g, s, fw, blinkOn) {
   const { px, text, tw, rect } = g
   const m = s.editing?.message
   if (!m) return
-  // delimitadores de los dos chorros
-  px(1, 28, 2, 58)
-  px(1, 90, 2, 58)
+  // delimitadores de la zona de impresión de cada chorro
+  const twin = s.hw.head.jets === 2
+  if (twin) {
+    px(1, 28, 2, 58)
+    px(1, 90, 2, 58)
+  } else px(1, 28, 2, 120)
   const n = Math.max(2, m.lines.length)
   const zoneH = 120 / n
   m.lines.forEach((line, li) => {
@@ -327,7 +330,7 @@ function drawEdit(g, s, fw, blinkOn) {
   if (m.lines.length === 0 && blinkOn) drawCursor(g, 10, 140, true)
   // línea de estado de edición
   const font = FONTS_9040.find((f) => f[1] === fw.font)?.[0] || 'SIN07118'
-  const st = `Cho.: ${fw.line % 2 === 0 ? 1 : 2}/2 - 1 Cab.(s) - Fuente: ${font}`
+  const st = twin ? `Cho.: ${fw.line % 2 === 0 ? 1 : 2}/2 - 1 Cab.(s) - Fuente: ${font}` : `Cho.: 1/1 - 1 Cab.(s) - Fuente: ${font}`
   px(0, 151, W, 1)
   text(320 - tw(st) / 2, 154, st)
 }
@@ -356,12 +359,15 @@ function drawStatus(g, s, fw) {
   text(152, 28, jetStateLabel(s))
   rowL(1, 'Veloc. chorro1:', `${L.velocity.toFixed(2).replace('.', ',')} m/s`)
   rowL(2, 'Fase chorro1:', ph)
-  rowL(3, 'Veloc. chorro2:', `${L.velocity.toFixed(2).replace('.', ',')} m/s`)
-  rowL(4, 'Fase chorro2:', ph2)
-  rowL(5, 'Presion:', `${L.pressure.toFixed(2).replace('.', ',')} bars`)
-  rowL(6, 'Viscosidad:', '29 s / 4,1 cPs')
-  rowL(7, 'Temperatura:', `${Math.round(L.temp)} °C`)
-  rowL(8, 'Temp. tinta:', '37 °C')
+  let r = 3
+  if (s.hw.head.jets === 2) {
+    rowL(r++, 'Veloc. chorro2:', `${L.velocity.toFixed(2).replace('.', ',')} m/s`)
+    rowL(r++, 'Fase chorro2:', ph2)
+  }
+  rowL(r++, 'Presion:', `${L.pressure.toFixed(2).replace('.', ',')} bars`)
+  rowL(r++, 'Viscosidad:', '29 s / 4,1 cPs')
+  rowL(r++, 'Temperatura:', `${Math.round(L.temp)} °C`)
+  rowL(r++, 'Temp. tinta:', '37 °C')
   const R = (i, label, value) => {
     text(340, 28 + i * 13, label)
     text(480, 28 + i * 13, value)

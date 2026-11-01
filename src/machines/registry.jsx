@@ -1,12 +1,7 @@
 // Registro de equipos: panel, pantalla, disposición y nombres de teclas para el tutor.
-import PanelS8, { LAYOUT_S8, DisplayS8 } from './s8classic/Panel.jsx'
+// Los dos equipos son Markem-Imaje 9040: Equipo A monochorro y Equipo B bichorro.
 import Panel9040, { LAYOUT_9040, Display9040 } from './m9040/Panel.jsx'
 
-const S8_NAMES = {
-  ONOFF: 'ON/OFF', ALT: 'ALT', F: 'F', FAULT: '☹? Defectos', EDIT: '✎ Edición', AA: 'Aa', DATE: '📅 Fecha/hora', CNT: '001 Contador', PARAM: '↔ Parámetros',
-  UP: '▲ Salir/Borrar', DOWN: '▼ Entrar/Seleccionar', LEFT: '◄', RIGHT: '►', CYCLE: '⟳ Ciclo', CAPS: 'CAPS M/m', SPACE: 'Espacio', F_KEY: 'F (letra)',
-  COLON: ':', LT: '<', GT: '>', SLASH: '/', MINUS: '–', EQUAL: '=', QUOTE: "'", LBR: '[',
-}
 const M9_NAMES = {
   ONOFF: 'ON/OFF', WRENCH: '🔧 Llave', INFO: 'ⓘ', UP: '▲', DOWN: '▼', LEFT: '◀', RIGHT: '▶', CENTER: '●', ESC: 'ESC', ENTER: 'ENTER', TAB: 'TAB',
   BKSP: 'Backspace', TABK: '⇤⇥', ENTERK: 'Enter', CAPS: 'Caps lock', SHIFT: 'Shift', SHIFTR: 'Shift', CTRL: 'Ctrl', CTRLR: 'Ctrl', ALT: 'Alt', ALTR: 'Alt', SPACE: 'Espacio',
@@ -19,40 +14,34 @@ const name9040 = (id) => {
   return id
 }
 
-function Thumb({ Panel, layout }) {
+function Thumb() {
   const w = 80
-  const scale = w / layout.width
+  const scale = w / LAYOUT_9040.width
   return (
-    <div className="pointer-events-none relative shrink-0 overflow-hidden rounded-md bg-slate-900" style={{ width: w, height: layout.height * scale }}>
+    <div className="pointer-events-none relative shrink-0 overflow-hidden rounded-md bg-slate-900" style={{ width: w, height: LAYOUT_9040.height * scale }}>
       <div className="absolute left-0 top-0 origin-top-left" style={{ transform: `scale(${scale})` }}>
-        <Panel />
+        <Panel9040 />
       </div>
     </div>
   )
 }
 
+const base = { layout: LAYOUT_9040, Panel: Panel9040, Display: Display9040, keyName: name9040, Thumb }
+
 export const MACHINES = {
-  S8_CLASSIC: {
-    id: 'S8_CLASSIC',
-    label: 'Imaje S8 Classic',
+  M9040_1: {
+    ...base,
+    id: 'M9040_1',
+    label: 'Markem-Imaje 9040',
     tag: 'Equipo A · chorro simple',
-    jetsLabel: '1 chorro · pantalla de 1 línea (40 caracteres)',
-    layout: LAYOUT_S8,
-    Panel: PanelS8,
-    Display: DisplayS8,
-    keyName: (id) => S8_NAMES[id] ?? id,
-    Thumb: () => <Thumb Panel={PanelS8} layout={LAYOUT_S8} />,
+    jetsLabel: 'Monochorro (1 chorro) · configuración 9040 1.1',
   },
   M9040: {
+    ...base,
     id: 'M9040',
     label: 'Markem-Imaje 9040',
     tag: 'Equipo B · doble chorro',
-    jetsLabel: 'Bichorro (2 chorros) · pantalla gráfica con menús',
-    layout: LAYOUT_9040,
-    Panel: Panel9040,
-    Display: Display9040,
-    keyName: name9040,
-    Thumb: () => <Thumb Panel={Panel9040} layout={LAYOUT_9040} />,
+    jetsLabel: 'Bichorro (2 chorros) · 1 cabezal',
   },
 }
-export const MACHINE_IDS = ['S8_CLASSIC', 'M9040']
+export const MACHINE_IDS = ['M9040_1', 'M9040']

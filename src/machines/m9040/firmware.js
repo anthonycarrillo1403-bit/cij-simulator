@@ -1,4 +1,4 @@
-// Firmware simulado del Markem-Imaje 9040 bichorro (1 cabezal, 2 chorros).
+// Firmware simulado del Markem-Imaje 9040 (1 cabezal; monochorro o bichorro según s.hw.head.jets).
 // LCD gráfico 640×200: fila de estado, barra de menús, zona de edición, barra de iconos F1–F8.
 // Menús, diálogos y textos según el Manual del Usuario A36952 (pantallas en castellano).
 //
@@ -129,8 +129,9 @@ export function initFw() {
 }
 
 const fwOf = (s) => {
-  if (!s.fw.M9040) s.fw.M9040 = initFw()
-  return s.fw.M9040
+  const k = s.ui?.machine || 'M9040'
+  if (!s.fw[k]) s.fw[k] = initFw()
+  return s.fw[k]
 }
 const active = (s) => s.messages[s.activeMessage]
 const edMsg = (s) => s.editing?.message
@@ -699,6 +700,7 @@ function menuAction(s, fw, mode, bar, item, act) {
       case 'Reloj automático':
         return openForm(s, fw, 'clock', act)
       case 'Orientación chorros':
+        if (s.hw.head.jets < 2) return info(fw, ['Orientación chorros:', 'Impresora monochorro: un solo chorro (1.1), no hay que alinear.'])
         return openForm(s, fw, 'orient', act)
       case 'Comunicación V24':
         return openForm(s, fw, 'v24', act)

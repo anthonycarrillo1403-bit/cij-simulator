@@ -3,7 +3,7 @@ import { reducer } from './reducer.js'
 import { createInitialState } from '../engine/sim.js'
 import { applyMachine } from '../machines/firmware.js'
 
-const KEY = 'cij-sim-v2'
+const KEY = 'cij-sim-v3'
 const StoreCtx = createContext(null)
 
 function deepMerge(base, saved) {

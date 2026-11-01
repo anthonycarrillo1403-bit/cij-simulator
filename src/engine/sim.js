@@ -18,9 +18,9 @@ export const DIAG_MS = { CLEAN: 5000, DRY: 8000, TEST: 3000 }
 
 export function createInitialState() {
   return {
-    version: 2,
-    ui: { screen: 'HOME', machine: 'S8_CLASSIC', unlocked: {} },
-    training: { S8_CLASSIC: {}, M9040: {} },
+    version: 3,
+    ui: { screen: 'HOME', machine: 'M9040_1', unlocked: {} },
+    training: { M9040_1: {}, M9040: {} },
     lesson: null,
     fw: {},
     hw: defaultHardware(),
@@ -53,11 +53,11 @@ export function createInitialState() {
     events: [],
     seq: 0,
     mission: null,
-    progress: { S8_CLASSIC: {}, M9040: {} },
+    progress: { M9040_1: {}, M9040: {} },
   }
 }
 
-export const modelInfo = (s) => MODELS[s.hw.model] || MODELS.S8_CONTRAST
+export const modelInfo = (s) => MODELS[s.hw.model] || MODELS.M9040
 
 export function pushEvent(s, type, data = {}) {
   s.seq += 1

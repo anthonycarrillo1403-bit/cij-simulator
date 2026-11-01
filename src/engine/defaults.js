@@ -77,14 +77,13 @@ export const IO_OUTPUTS = {
 }
 
 export const MODELS = {
-  S8_CLASSIC: { label: 'S8 Classic', short: 'S8', pigmented: false, airKit: false, opvars: false, datamatrix: false, lcd: 'classic' },
-  S8_CONTRAST: { label: 'S8 Contrast', short: 'S8C', pigmented: true, airKit: true, opvars: false, datamatrix: false, lcd: 'contrast' },
+  M9040_1: { label: '9040 monochorro', short: '9040', pigmented: false, airKit: false, opvars: true, datamatrix: true, lcd: '9040' },
   M9040: { label: '9040', short: '9040', pigmented: false, airKit: false, opvars: true, datamatrix: true, lcd: '9040' },
 }
 
 export function defaultHardware() {
   return {
-    model: 'S8_CONTRAST',
+    model: 'M9040_1',
     jet: {
       pressureSet: 2.9, // bar
       piezoFreq: 62.5, // kHz

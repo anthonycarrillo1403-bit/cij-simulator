@@ -144,7 +144,7 @@ export function MissionsScreen() {
 export function HelpScreen() {
   const { dispatch } = useStore()
   const tips = [
-    ['Elegir equipo', 'En el menú principal toca Equipo A (S8 Classic, chorro simple) o Equipo B (9040, doble chorro). Las lecciones, las misiones y el progreso son independientes para cada equipo.'],
+    ['Elegir equipo', 'En el menú principal toca Equipo A (9040 monochorro, un chorro) o Equipo B (9040 bichorro, doble chorro). Las lecciones, las misiones y el progreso son independientes para cada equipo.'],
     ['Acercar y mover', 'Pellizca con dos dedos para acercar. Arrastra con un dedo para moverte. Doble toque en una zona sin teclas acerca ×2 (otro doble toque vuelve). Botones de arriba: ⤢ Todo, 🖵 Pantalla, ⌨ Teclado.'],
     ['Pantalla espejo', 'Cuando estás acercado al teclado y la pantalla de la máquina queda fuera de la vista, aparece una copia de la pantalla arriba. Así ves lo que pasa mientras presionas teclas. Tócala para ir a la pantalla.'],
     ['Entrenamiento', 'Cada lección te guía paso a paso. La tecla que debes presionar tiene un anillo amarillo y una flecha. «Muéstrame la tecla» acerca la vista hasta ella. Para escribir, la tarjeta muestra el texto y lo que ya llevas en verde.'],

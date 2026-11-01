@@ -18,7 +18,7 @@ export function prep(s, { power = 'ON', jet = 'RUNNING', resetMsgs = false, keep
   s.hw.clockStop = false
   s.hw.head = { ...hwDef.head }
   machineHw(m, s.hw)
-  s.hw.head.orient = m === 'M9040' ? { j1: 0, j2: 0 } : undefined
+  if (m === 'M9040') s.hw.head.orient = { j1: 0, j2: 0 }
   s.hw.head.skew = 0
   s.hw.encoder.division = s.hw.encoder.ref
   s.line.running = true

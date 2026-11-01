@@ -1,79 +1,52 @@
 // Firmware de cada equipo y cambio de equipo (cada uno conserva sus mensajes y su hardware).
-import * as S8 from './s8classic/firmware.js'
+// Equipo A (M9040_1) = 9040 monochorro, Equipo B (M9040) = 9040 bichorro: mismo firmware.
 import * as M9 from './m9040/firmware.js'
-import { defaultHardware, defaultOpvars, makeMessage, T, F } from '../engine/defaults.js'
-import { defaultMessages } from '../engine/defaults.js'
+import { defaultHardware, defaultOpvars, defaultMessages } from '../engine/defaults.js'
 
-export const FIRMWARE = {
-  S8_CLASSIC: {
-    init: S8.initFw,
-    press: S8.press,
-    view: S8.view,
-    leds: S8.leds,
-    input: S8.input,
-    typingKey: S8.typingKey,
-    navKey: S8.navKey,
-    fromKeyboard: S8.fromKeyboard,
-    screenId: S8.screenId,
-  },
-  M9040: {
-    init: M9.initFw,
-    press: M9.press,
-    view: M9.view,
-    leds: M9.leds,
-    input: M9.input,
-    typingKey: M9.typingKey,
-    navKey: M9.navKey,
-    fromKeyboard: M9.fromKeyboard,
-    screenId: M9.screenId,
-  },
+const FW9040 = {
+  init: M9.initFw,
+  press: M9.press,
+  view: M9.view,
+  leds: M9.leds,
+  input: M9.input,
+  typingKey: M9.typingKey,
+  navKey: M9.navKey,
+  fromKeyboard: M9.fromKeyboard,
+  screenId: M9.screenId,
 }
 
-const S8P = { sense: 'DIRECTO', printSpeed: 500, trigger: 'OBJETO', repeat: 1, delayFwd: 50, delayRev: 50, interval: 100, dtopCancel: 20, dtopFilter: 100, width: 100, din: false, vSense: 'UP', hSense: 'RIGHT' }
-export const makeS8Message = (name, lines, extra = {}) => makeMessage(name, lines, { params: { ...S8P }, shift: { start: '06:00', interval: '08:00', type: 'LETRAS', codes: [] }, ...extra })
+export const FIRMWARE = { M9040_1: FW9040, M9040: FW9040 }
+export const jetsOf = (m) => (m === 'M9040' ? 2 : 1)
 
-// Biblioteca de mensajes del S8 Classic (numerados 01…25)
-export function defaultMessagesS8() {
-  return {
-    '01': makeS8Message('01', [[T('IMAJE S8 CLASSIC')]]),
-    '02': makeS8Message('02', [[T('LOTE A1 '), F('date', { format: 'JJJ' }), F('date', { format: 'Y' })]]),
-    '03': makeS8Message('03', [[T('CLIENTE X L:1234')], [T('CAD '), F('expiry', { slot: 1, format: 'DD' }), T('/'), F('expiry', { slot: 1, format: 'MM' }), T('/'), F('expiry', { slot: 1, format: 'YY' })]], {
-      expiry: { amount: 180, unit: 'DIAS' },
-    }),
-    '04': makeS8Message('04', [[T('FAB '), F('date', { format: 'DD' }), T('/'), F('date', { format: 'MM' }), T('/'), F('date', { format: 'YY' }), T(' '), F('clock', { format: 'HH' }), T(':'), F('clock', { format: 'MM' })]]),
-  }
-}
-
-// Hardware propio de cada equipo (referencia del tacómetro, orientación de chorros del bichorro)
+// Hardware propio de cada equipo (número de chorros, referencia del tacómetro, orientación)
 export function machineHw(m, hw) {
   hw.model = m
-  hw.head = { ...hw.head, jets: m === 'M9040' ? 2 : 1 }
-  if (m === 'M9040') {
+  hw.head = { ...hw.head, jets: jetsOf(m) }
+  if (jetsOf(m) === 2) {
     hw.head.orient = hw.head.orient || { j1: 0, j2: 0 }
     hw.head.skew = hw.head.skew || 0
-    hw.encoder.ref = 12
   } else {
     delete hw.head.orient
-    hw.encoder.ref = 15
+    hw.head.skew = 0
   }
+  hw.encoder.ref = 12
   return hw
 }
 
-export const defaultMessagesFor = (m) => (m === 'S8_CLASSIC' ? defaultMessagesS8() : defaultMessages())
-export const defaultActiveFor = (m) => (m === 'S8_CLASSIC' ? '01' : 'PRUEBA')
+export const defaultMessagesFor = () => defaultMessages()
+export const defaultActiveFor = () => 'PRUEBA'
 
 function freshMachineData(m) {
   const hw = machineHw(m, defaultHardware())
   hw.encoder.division = hw.encoder.ref
-  if (m === 'S8_CLASSIC') {
-    hw.agitator = false
-    hw.airKit = { enabled: false, inlet: 0, regulator: 0, purged: false }
-  }
+  hw.agitator = false
+  hw.airKit = { enabled: false, inlet: 0, regulator: 0, purged: false }
   return { messages: defaultMessagesFor(m), activeMessage: defaultActiveFor(m), opvars: defaultOpvars(), hw }
 }
 
 // Asegura que el estado corresponde al equipo elegido en el menú
 export function applyMachine(s) {
+  if (!FIRMWARE[s.ui.machine]) s.ui.machine = 'M9040_1'
   const m = s.ui.machine
   if (!s.fw) s.fw = {}
   if (!s.stash) s.stash = {}
@@ -91,7 +64,7 @@ export function applyMachine(s) {
     s.prints = []
     s.faults = {}
     s.jetState = 'STOPPED'
-    s.power = m === 'S8_CLASSIC' ? 'OFF' : 'ON'
+    s.power = 'ON'
     s.fw[m] = FIRMWARE[m].init()
   }
   machineHw(m, s.hw)

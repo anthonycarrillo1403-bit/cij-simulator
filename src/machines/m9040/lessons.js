@@ -1,4 +1,4 @@
-// Entrenamiento guiado del Markem-Imaje 9040 bichorro (Equipo B, doble chorro).
+// Entrenamiento guiado del Markem-Imaje 9040: Equipo A monochorro (jets = 1) y Equipo B bichorro (jets = 2).
 import { prep } from '../../engine/scenario.js'
 import { makeMessage, T } from '../../engine/defaults.js'
 import { messageHasField } from '../../engine/render.js'
@@ -23,7 +23,9 @@ function setupMsg(s, name, lines) {
   s.activeMessage = name
 }
 
-export const LESSONS_9040 = [
+export function lessons9040(jets) {
+  const twin = jets === 2
+  return [
   {
     id: 'panel',
     title: 'Conoce el panel',
@@ -31,7 +33,7 @@ export const LESSONS_9040 = [
     summary: 'Ya conoces el panel del 9040. Ahora arrancarás la impresora.',
     setup: (s) => prep(s, { power: 'ON', jet: 'STOPPED' }),
     steps: [
-      info('Este es el panel del **Markem-Imaje 9040 bichorro** (doble chorro). Para acercarte: pellizca con dos dedos o usa **⤢ Todo · 🖵 Pantalla · ⌨ Teclado**. Arrastra con un dedo para moverte.'),
+      info(`Este es el panel del **Markem-Imaje 9040 ${twin ? 'bichorro** (doble chorro)' : 'monochorro** (un chorro)'}. Para acercarte: pellizca con dos dedos o usa **⤢ Todo · 🖵 Pantalla · ⌨ Teclado**. Arrastra con un dedo para moverte.`),
       info('[ONOFF] (naranja) arranca y para la impresora completa. Al lado: LED amarillo = corriente; LEDs rojos = nivel bajo de **aditivo** y de **tinta**.', { key: 'ONOFF' }),
       info('LED **HEAD 1** verde: fijo = listo para imprimir, parpadeando = defecto, apagado = parado. El LED rojo con el triángulo avisa de defectos y alarmas.', { region: 'leds' }),
       info('La pantalla: arriba el estado («ON»), el título del menú y la hora; debajo la **barra de menús**; en el centro el mensaje en producción; abajo los **iconos de F1 a F8**.', { region: 'screen' }),
@@ -50,7 +52,7 @@ export const LESSONS_9040 = [
     setup: (s) => prep(s, { power: 'OFF' }),
     steps: [
       { say: 'La impresora está parada (pantalla apagada, solo el LED amarillo). Presiona [ONOFF].', key: 'ONOFF', done: (s) => s.power !== 'OFF' },
-      { say: 'Arranca el circuito de tinta y luego los chorros (Modo de arranque automático). **HEAD 1 parpadea**… espera.', done: (s) => s.jetState === 'RUNNING' },
+      { say: 'Arranca el circuito de tinta y luego el chorro (Modo de arranque automático). **HEAD 1 parpadea**… espera.', done: (s) => s.jetState === 'RUNNING' },
       info('**HEAD 1 verde fijo** = listo para imprimir. Arriba a la izquierda de la pantalla: «ON».', { region: 'leds' }),
       { say: 'Para parar: presiona [ONOFF]. Aparece «Selección del tipo de paro».', key: 'ONOFF', done: (s) => Boolean(fw(s).confirm) },
       { say: 'SÍ = **paro largo** (limpia el cabezal, para paradas largas); NO = paro corto. Deja SÍ marcado y presiona [ENTER].', key: 'ENTER', done: (s) => s.power === 'STOPPING' || s.power === 'OFF' },
@@ -79,8 +81,8 @@ export const LESSONS_9040 = [
   {
     id: 'texto',
     title: 'Crear un mensaje de dos líneas',
-    goal: 'F2 nuevo, escribir en los 2 chorros, F7 cargar',
-    summary: '[F2] nombre › escribir › [DOWN] segunda línea (chorro 2) › [F7] cargar › [F8] volver.',
+    goal: twin ? 'F2 nuevo, escribir en los 2 chorros, F7 cargar' : 'F2 nuevo, escribir 2 líneas, F7 cargar',
+    summary: `[F2] nombre › escribir › [DOWN] segunda línea${twin ? ' (chorro 2)' : ''} › [F7] cargar › [F8] volver.`,
     setup: (s) => {
       prep(s)
       delete s.messages.PRUEBA2
@@ -89,9 +91,9 @@ export const LESSONS_9040 = [
       { say: 'Presiona [F2] (hoja en blanco) para crear un mensaje.', key: m9Nav('newmsg'), done: (s) => fw(s).dlg?.form === 'newmsg' },
       { say: 'Escribe el nombre **PRUEBA2** (máx. 8 caracteres).', type: 'PRUEBA2', done: (s) => fw(s).dlg?.buf === 'PRUEBA2' },
       { say: 'Presiona [ENTER]: se abre la zona de edición vacía (el nombre aparece arriba a la derecha).', key: 'ENTER', done: (s) => inEdit(s) && ed(s)?.name === 'PRUEBA2' },
-      info('A la izquierda hay **dos barras**: arriba la zona del **chorro 1**, abajo la del **chorro 2**. El cursor parpadea donde vas a escribir.', { region: 'screen' }),
+      info(twin ? 'A la izquierda hay **dos barras**: arriba la zona del **chorro 1**, abajo la del **chorro 2**. El cursor parpadea donde vas a escribir.' : 'A la izquierda, la **barra** marca la altura que imprime el chorro. El cursor parpadea donde vas a escribir.', { region: 'screen' }),
       { say: 'Escribe la primera línea.', type: 'HOLA 9040', done: (s) => M9.input(s) === 'HOLA 9040' },
-      { say: 'Presiona [DOWN] para bajar a la línea del chorro 2.', key: 'DOWN', done: (s) => fw(s).line === 1 },
+      { say: twin ? 'Presiona [DOWN] para bajar a la línea del chorro 2.' : 'Presiona [DOWN] para bajar a la segunda línea.', key: 'DOWN', done: (s) => fw(s).line === 1 },
       { say: 'Escribe la segunda línea.', type: 'LINEA 2', done: (s) => M9.input(s) === 'LINEA 2' },
       info('Para corregir: [LEFT] [RIGHT] mueven el cursor, [BKSP] borra a la izquierda.'),
       { say: 'Presiona [F7] «Cargar impresora»: guarda el mensaje y lo pone en producción.', key: loadKey, done: (s) => s.activeMessage === 'PRUEBA2' },
@@ -242,7 +244,7 @@ export const LESSONS_9040 = [
       { say: 'Abre **▤ Línea** › «Rellenar tinta».', drawer: 'ink', done: (s) => s.hidden.inkLevel > 10 },
       { say: 'Presiona [INFO] otra vez para resolver la alarma.', key: (s) => (fw(s).defects ? 'INFO' : null), done: (s) => Object.keys(s.faults).length === 0 },
       { say: 'Presiona [WRENCH]: estado del cabezal.', key: (s) => (fw(s).defects ? 'ESC' : 'WRENCH'), done: (s) => Boolean(fw(s).status) },
-      info('**Estado chorros** (EN MARCHA), **Veloc. chorro1/2** (≈20 m/s), **Fase chorro1/2**, **Presion** (≈2,9 bar), **Viscosidad** y temperaturas.', { region: 'screen' }),
+      info(`**Estado chorros** (EN MARCHA), **Veloc. chorro${twin ? '1/2' : '1'}** (≈20 m/s), **Fase chorro${twin ? '1/2' : '1'}**, **Presion** (≈2,9 bar), **Viscosidad** y temperaturas.`, { region: 'screen' }),
       { say: 'Sal con [ESC].', key: 'ESC', done: (s) => !fw(s).status },
     ],
   },
@@ -256,7 +258,7 @@ export const LESSONS_9040 = [
       s.hw.jet.modulation = 95
     },
     steps: [
-      { say: 'Presiona [WRENCH] para ver «Fase chorro1» y «Fase chorro2».', key: 'WRENCH', done: (s) => Boolean(fw(s).status) },
+      { say: twin ? 'Presiona [WRENCH] para ver «Fase chorro1» y «Fase chorro2».' : 'Presiona [WRENCH] para ver «Fase chorro1».', key: 'WRENCH', done: (s) => Boolean(fw(s).status) },
       info('Correcto = **3 ó 4 unos seguidos** (00111100). Ahora sale desordenado: el chorro no se rompe en gotas a la altura del electrodo de carga.', { region: 'screen' }),
       { say: 'Abre **▤ Línea** › «Potenciómetro de quiebra» y gíralo con ‹ › hasta ver 00111100.', drawer: 'pot', done: (s) => s.live.breakoff >= 8 && s.live.breakoff <= 10 && s.live.phaseOk },
       { say: 'Espera 5 segundos sin tocar.', done: (s) => s.live.phaseStableMs >= 5000 },
@@ -345,4 +347,5 @@ export const LESSONS_9040 = [
       { say: 'Mira **▤ Línea**: el desfase del próximo producto es 0 mm.', drawer: 'product', done: (s, c) => ev(c, 'PRINT', (e) => Math.abs(e.twinOffset) <= 0.5) },
     ],
   },
-]
+].filter((l) => twin || l.id !== 'orientacion')
+}

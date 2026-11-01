@@ -12,10 +12,9 @@
 // ctx = { ev: eventos desde el inicio del paso, fw: firmware del equipo }
 import { pushEvent } from './sim.js'
 import { FIRMWARE } from '../machines/firmware.js'
-import { LESSONS_S8 } from '../machines/s8classic/lessons.js'
-import { LESSONS_9040 } from '../machines/m9040/lessons.js'
+import { lessons9040 } from '../machines/m9040/lessons.js'
 
-const LESSONS = { S8_CLASSIC: LESSONS_S8, M9040: LESSONS_9040 }
+const LESSONS = { M9040_1: lessons9040(1), M9040: lessons9040(2) }
 
 export const lessonsFor = (machine) => LESSONS[machine] || []
 export const lessonById = (machine, id) => lessonsFor(machine).find((l) => l.id === id)

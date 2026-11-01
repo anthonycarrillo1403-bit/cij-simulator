@@ -8,7 +8,6 @@ import { F, T } from './defaults.js'
 import { applyMachine } from '../machines/firmware.js'
 import { lessonsFor, currentStep, targetKey } from './training.js'
 import { missionsFor, missionDef, missionHintKey } from './missions.js'
-import * as S8 from '../machines/s8classic/firmware.js'
 
 let s
 const d = (a) => (s = reducer(s, a))
@@ -81,34 +80,26 @@ describe('Render de mensajes', () => {
 })
 
 describe('Equipos', () => {
-  it('cada equipo conserva sus mensajes y su número de chorros', () => {
-    boot('S8_CLASSIC')
-    expect(Object.keys(s.messages)).toContain('02')
+  it('Equipo A es monochorro y Equipo B bichorro; cada uno conserva sus mensajes', () => {
+    boot('M9040_1')
     expect(s.hw.head.jets).toBe(1)
-    expect(s.power).toBe('OFF')
+    expect(s.hw.model).toBe('M9040_1')
+    s.messages.SOLO_A = structuredClone(s.messages.PRUEBA)
     d({ type: 'UI_SET', patch: { machine: 'M9040' } })
-    expect(s.messages.LOTE_A1).toBeTruthy()
     expect(s.hw.head.jets).toBe(2)
-    d({ type: 'UI_SET', patch: { machine: 'S8_CLASSIC' } })
-    expect(s.messages['02']).toBeTruthy()
+    expect(s.messages.SOLO_A).toBeUndefined()
+    d({ type: 'UI_SET', patch: { machine: 'M9040_1' } })
+    expect(s.messages.SOLO_A).toBeTruthy()
+    expect(s.hw.head.jets).toBe(1)
   })
-  it('S8 Classic: ON/OFF arranca y la pantalla pasa de «ON/OFF?» a «Function?...»', () => {
-    boot('S8_CLASSIC')
-    expect(S8.view(s).text).toBe('ON/OFF?')
-    d({ type: 'KEY', key: 'ONOFF' })
+  it('monochorro: tinta normal (sin alarmas de pigmento) y sin orientación de chorros', () => {
+    boot('M9040_1')
+    d({ type: 'JET_START' })
     run(12000)
     expect(s.jetState).toBe('RUNNING')
-    expect(S8.view(s).text).toBe('Function?...')
-    run(1500)
+    expect(Object.keys(s.faults)).toEqual([])
     expect(canPrint(s)).toBe(true)
-  })
-  it('S8 Classic: hora 06:00 con [DATE] [DOWN] cifras [UP]', () => {
-    boot('S8_CLASSIC')
-    d({ type: 'KEY', key: 'ONOFF' })
-    run(4000)
-    for (const k of ['DATE', 'DOWN', '0', '6', '0', '0', '0', '0', 'UP']) d({ type: 'KEY', key: k })
-    expect(rtcNow(s.rtcOffset).getHours()).toBe(6)
-    expect(S8.view(s).text.startsWith('Time (HMS) : 06.00.0')).toBe(true)
+    expect(s.prints[0]?.twinOffset ?? 0).toBe(0)
   })
 })
 
@@ -158,7 +149,7 @@ function drive(kind) {
   return { ok: false, step: st?.say || st?.text, last: keys.slice(-12).join(' '), scr: JSON.stringify(s.fw[s.ui.machine]).slice(0, 300) }
 }
 
-for (const machine of ['S8_CLASSIC', 'M9040']) {
+for (const machine of ['M9040_1', 'M9040']) {
   describe(`Entrenamiento guiado · ${machine}`, () => {
     for (const lesson of lessonsFor(machine)) {
       it(`lección «${lesson.title}» se completa siguiendo al tutor`, () => {
