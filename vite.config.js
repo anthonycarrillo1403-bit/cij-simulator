@@ -4,6 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // BASE permite publicar en una subcarpeta (p. ej. GitHub Pages: BASE=/cij-simulator/)
 const base = process.env.BASE || './'
+// start_url/scope/id absolutos cuando se publica en subcarpeta: evita que el icono
+// instalado no abra en algunos lanzadores Android (WebAPK) por rutas relativas.
+const appUrl = base === './' ? '.' : base
 
 export default defineConfig({
   base,
@@ -18,11 +21,13 @@ export default defineConfig({
         short_name: 'CIJ Trainer',
         description: 'Simulador de entrenamiento para impresoras de chorro de tinta continuo S8 Classic, S8 Contrast y 9040.',
         lang: 'es',
-        start_url: '.',
-        scope: '.',
-        display: 'fullscreen',
-        display_override: ['fullscreen', 'standalone'],
-        orientation: 'landscape',
+        id: appUrl,
+        start_url: appUrl,
+        scope: appUrl,
+        // 'standalone' es el modo con mejor compatibilidad; la app pide pantalla
+        // completa por sí misma al primer toque.
+        display: 'standalone',
+        orientation: 'any',
         background_color: '#0b1220',
         theme_color: '#0b1220',
         icons: [
@@ -34,6 +39,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
       },
     }),
   ],
