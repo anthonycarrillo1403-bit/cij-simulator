@@ -18,7 +18,11 @@ export const DIAG_MS = { CLEAN: 5000, DRY: 8000, TEST: 3000 }
 
 export function createInitialState() {
   return {
-    version: 1,
+    version: 2,
+    ui: { screen: 'HOME', machine: 'S8_CLASSIC', unlocked: {} },
+    training: { S8_CLASSIC: {}, M9040: {} },
+    lesson: null,
+    fw: {},
     hw: defaultHardware(),
     hidden: defaultHidden(),
     messages: defaultMessages(),
@@ -46,11 +50,10 @@ export function createInitialState() {
     lastPrintAt: 0,
     diag: { running: null, progress: 0, lastLeak: null, done: {} },
     editing: null,
-    nav: { menu: 'HOME', tab: 0, view: null },
     events: [],
     seq: 0,
     mission: null,
-    progress: {},
+    progress: { S8_CLASSIC: {}, M9040: {} },
   }
 }
 
@@ -186,11 +189,13 @@ export function printGeometry(s) {
   const m = s.messages[s.activeMessage]
   const lineMmS = (s.line.speed * 1000) / 60
   let wf
-  if (s.hw.encoder.source === 'ENCODER') wf = s.hw.encoder.division / ENCODER_DIVISION_REF
+  if (s.hw.encoder.source === 'ENCODER') wf = s.hw.encoder.division / (s.hw.encoder.ref || ENCODER_DIVISION_REF)
   else wf = lineMmS / Math.max(1, m?.params.printSpeed || 500)
   wf *= (m?.params.width || 100) / 100
   const hf = (s.live.eht || s.hw.jet.ehtSet) / EHT_NOMINAL
-  const twinOffset = s.hw.head.jets === 2 ? s.hw.head.delayJet2 - s.hw.head.delayJet1 - s.hw.head.physOffset : 0
+  // Bichorro 9040: el chorro 1.2 llega `skew` tramas tarde; la Orientación (tramas) retrasa cada chorro.
+  const h = s.hw.head
+  const twinOffset = h.jets === 2 ? (h.orient ? ((h.skew || 0) + (h.orient.j2 || 0) - (h.orient.j1 || 0)) / 2.8 : h.delayJet2 - h.delayJet1 - h.physOffset) : 0
   return { wf, hf, twinOffset }
 }
 
@@ -268,6 +273,8 @@ export function tick(s, dt) {
     s.powerTimer -= dt
     if (s.powerTimer <= 0) {
       s.power = 'ON'
+      // al arrancar se borran los defectos cuya causa ha desaparecido
+      for (const code of activeFaults(s)) if (!faultConditionPresent(s, code)) delete s.faults[code]
       pushEvent(s, 'POWER_READY')
       if (s.hw.startMode === 'AUTO') startJet(s)
     }
@@ -278,7 +285,7 @@ export function tick(s, dt) {
   // --- chorro
   if (s.jetState === 'STARTING') {
     s.jetTimer -= dt
-    if (s.hidden.coverOpen) raiseFault(s, 'COVER')
+    if (s.hidden.coverOpen && !s.hw.faultInhibit?.cover) raiseFault(s, 'COVER')
     if (s.jetTimer <= 0 && s.jetState === 'STARTING') {
       s.jetState = 'RUNNING'
       pushEvent(s, 'JET_RUNNING')
@@ -326,7 +333,7 @@ export function tick(s, dt) {
 
   // --- defectos
   if (s.jetState === 'RUNNING') {
-    s.timers.recup = !s.adjustMode && L.recovery < 60 ? s.timers.recup + dt : 0
+    s.timers.recup = !s.adjustMode && !s.hw.faultInhibit?.recup && L.recovery < 60 ? s.timers.recup + dt : 0
     if (s.timers.recup > 2000) raiseFault(s, 'RECUP')
     s.timers.pressure = L.pressure < PRESSURE_MIN || L.pressure > PRESSURE_MAX ? s.timers.pressure + dt : 0
     if (s.timers.pressure > 3000) raiseFault(s, 'PRESSURE')

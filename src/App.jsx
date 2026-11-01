@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react'
 import { StoreProvider, useStore } from './state/store.jsx'
-import { ModalProvider } from './components/Modals.jsx'
-import { FocusProvider } from './components/Fields.jsx'
-import { TopBar, LeftKeys, RightKeys, useNavKeys } from './components/Chassis.jsx'
-import MissionsPanel from './components/MissionsPanel.jsx'
-import { MainMenu, Standby } from './screens/MainMenu.jsx'
-import Production from './screens/Production.jsx'
-import Edit from './screens/Edit.jsx'
-import Prep from './screens/Prep.jsx'
-import OpVars from './screens/OpVars.jsx'
-import { modelInfo } from './engine/sim.js'
-import { missionById } from './engine/missions.js'
+import Home from './ui/Home.jsx'
+import MachineView from './ui/MachineView.jsx'
+import { LessonsScreen, MissionsScreen, HelpScreen } from './ui/Lists.jsx'
+import { FIRMWARE } from './machines/firmware.js'
 
-function useLandscape() {
+function usePortrait() {
   const q = () => window.matchMedia('(orientation: portrait)').matches
   const [portrait, setPortrait] = useState(q)
   useEffect(() => {
@@ -22,24 +15,6 @@ function useLandscape() {
     return () => mq.removeEventListener('change', h)
   }, [])
   return portrait
-}
-
-function ScreenRouter() {
-  const { state } = useStore()
-  switch (state.nav.menu) {
-    case 'STANDBY':
-      return <Standby />
-    case 'PROD':
-      return <Production />
-    case 'EDIT':
-      return <Edit />
-    case 'PREP':
-      return <Prep />
-    case 'OPVAR':
-      return <OpVars />
-    default:
-      return <MainMenu />
-  }
 }
 
 function Toast() {
@@ -54,51 +29,44 @@ function Toast() {
   }, [t?.t])
   if (!t || !visible) return null
   const color = t.kind === 'warn' ? 'bg-amber-500 text-slate-900' : t.kind === 'ok' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'
-  return <div className={`pointer-events-none absolute bottom-2 left-1/2 z-[60] max-w-[70%] -translate-x-1/2 rounded px-3 py-1 text-[12px] font-semibold shadow-lg ${color}`}>{t.text}</div>
+  return <div className={`pointer-events-none absolute left-1/2 top-10 z-[60] max-w-[70%] -translate-x-1/2 rounded px-3 py-1 text-[12px] font-semibold shadow-lg ${color}`}>{t.text}</div>
 }
 
-function MissionCelebration() {
+function Router() {
   const { state } = useStore()
-  const done = state.mission?.completedAt
-  const [show, setShow] = useState(false)
-  useEffect(() => {
-    if (!done || Date.now() - done > 3000) return
-    setShow(true)
-    const id = setTimeout(() => setShow(false), 3500)
-    return () => clearTimeout(id)
-  }, [done])
-  if (!show) return null
-  const m = missionById(state.mission.id)
-  return (
-    <div className="pointer-events-none absolute inset-0 z-[55] flex items-center justify-center">
-      <div className="pop rounded-xl border-2 border-emerald-300 bg-emerald-700/95 px-6 py-3 text-center text-white shadow-2xl">
-        <div className="text-2xl">🏆</div>
-        <div className="text-base font-black">MISIÓN {String(m.id).padStart(2, '0')} COMPLETADA</div>
-        <div className="text-[12px]">{m.title}</div>
-      </div>
-    </div>
-  )
+  switch (state.ui.screen) {
+    case 'MACHINE':
+      return <MachineView />
+    case 'LESSONS':
+      return <LessonsScreen />
+    case 'MISSIONS':
+      return <MissionsScreen />
+    case 'HELP':
+      return <HelpScreen />
+    default:
+      return <Home />
+  }
 }
 
 function Shell() {
-  const { state } = useStore()
-  const portrait = useLandscape()
-  const [missions, setMissions] = useState(false)
-  const { key } = useNavKeys()
-  const theme = modelInfo(state).lcd
+  const { state, dispatch } = useStore()
+  const portrait = usePortrait()
 
-  // teclado físico (PC / teclado bluetooth)
+  // Teclado del PC / teclado bluetooth → teclas de la máquina
   useEffect(() => {
-    const map = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', Enter: 'ENTER', Escape: 'ESC' }
+    if (state.ui.screen !== 'MACHINE') return
+    const fw = FIRMWARE[state.ui.machine]
     const h = (e) => {
-      if (map[e.key]) {
+      if (e.target.closest?.('input,textarea,select')) return
+      const key = fw.fromKeyboard?.(e)
+      if (key) {
         e.preventDefault()
-        key(map[e.key])
+        dispatch({ type: 'KEY', key })
       }
     }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
-  })
+  }, [state.ui.screen, state.ui.machine, dispatch])
 
   // En vertical se gira la interfaz 90° para trabajar siempre en horizontal.
   const rot = portrait
@@ -106,23 +74,8 @@ function Shell() {
     : { width: '100dvw', height: '100dvh' }
 
   return (
-    <div style={rot} className="relative flex flex-col overflow-hidden bg-[var(--chassis)] pl-[var(--safe-l)] pr-[var(--safe-r)]">
-      <TopBar onMissions={() => setMissions(true)} />
-      <div className="flex min-h-0 flex-1 gap-1.5 px-1.5 pb-1.5">
-        <LeftKeys />
-        <div className="relative min-w-0 flex-1 rounded-md border-[5px] border-[#0d141c] shadow-[inset_0_0_12px_rgba(0,0,0,.5)]">
-          <div className={`scr ${theme === 'classic' ? 'classic' : theme === '9040' ? 'm9040' : ''} relative h-full w-full overflow-hidden rounded-sm`}>
-            <ModalProvider>
-              <FocusProvider>
-                <ScreenRouter />
-              </FocusProvider>
-            </ModalProvider>
-          </div>
-        </div>
-        <RightKeys onMissions={() => setMissions(true)} />
-      </div>
-      <MissionsPanel open={missions} onClose={() => setMissions(false)} />
-      <MissionCelebration />
+    <div style={rot} className="relative overflow-hidden bg-[#0b1220] pl-[var(--safe-l)] pr-[var(--safe-r)]">
+      <Router />
       <Toast />
     </div>
   )

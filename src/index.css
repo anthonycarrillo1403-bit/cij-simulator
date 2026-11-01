@@ -162,3 +162,14 @@ body {
 
 @keyframes pop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .pop { animation: pop 0.12s ease-out; }
+
+/* Tutor: anillo y flecha que señalan la tecla a presionar */
+.coach-ring { box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.55), 0 0 22px 6px rgba(253, 224, 71, 0.75); }
+.coach-ring-pulse { animation: coachPulse 1.1s ease-out infinite; }
+@keyframes coachPulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.45); opacity: 0; } }
+.coach-arrow { animation: coachBob 0.8s ease-in-out infinite alternate; }
+@keyframes coachBob { from { transform: translate(-50%, -6px); } to { transform: translate(-50%, 4px); } }
+
+/* Teclas de los paneles reales: hundimiento al presionar */
+.pkey { transition: transform 60ms, filter 60ms; cursor: pointer; }
+.pkey:active, .pkey.down { transform: translateY(2px) scale(0.97); filter: brightness(0.88); }

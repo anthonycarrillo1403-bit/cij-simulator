@@ -100,6 +100,7 @@ export function defaultHardware() {
     airKit: { enabled: true, inlet: 6.0, regulator: 3.6, purged: true },
     v24: { baud: 9600, parity: 'NINGUNA', bits: 8, stop: 1, protocol: 'IMAJE', data: '', lastFrame: '' },
     startMode: 'AUTO',
+    faultInhibit: { cover: false, recup: false },
     language: 'ESPAÑOL',
     autoClock: true,
   }

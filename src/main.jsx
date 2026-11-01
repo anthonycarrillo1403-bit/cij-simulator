@@ -47,6 +47,17 @@ function enterFullscreenOnce() {
 }
 window.addEventListener('pointerdown', enterFullscreenOnce, { once: true })
 
+// Cuando se publica una versión nueva, el service worker la activa y la app se recarga sola
+// (sólo si ya había una versión controlando la página: no en la primera visita).
+if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return
+    reloaded = true
+    location.reload()
+  })
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>

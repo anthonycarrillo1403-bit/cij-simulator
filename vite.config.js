@@ -17,9 +17,9 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['icons/favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Simulador CIJ Markem-Imaje S8 / 9040',
+        name: 'Simulador CIJ Imaje S8 Classic / Markem-Imaje 9040',
         short_name: 'CIJ Trainer',
-        description: 'Simulador de entrenamiento para impresoras de chorro de tinta continuo S8 Classic, S8 Contrast y 9040.',
+        description: 'Entrenamiento guiado y misiones con los paneles reales de la Imaje S8 Classic (chorro simple) y la Markem-Imaje 9040 (doble chorro).',
         lang: 'es',
         id: appUrl,
         start_url: appUrl,

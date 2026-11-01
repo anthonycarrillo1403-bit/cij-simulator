@@ -1,6 +1,6 @@
 // Composición de mensajes: campos -> texto -> matriz de puntos (tramas).
 import { rasterizeText, FONTS } from './font5x7.js'
-import { code128Modules, dataMatrix } from './barcodes.js'
+import { code128Modules, code39Modules, itfModules, dataMatrix } from './barcodes.js'
 import { addDays, addMonths, formatDate, formatClock, shiftCode, pad } from './rtc.js'
 
 export const FIELD_LABELS = {
@@ -96,7 +96,7 @@ export function rasterField(field, ctx) {
         return { cols, h: size }
       }
       const h = field.height || 14
-      const mods = code128Modules(data)
+      const mods = field.symbology === 'CODE39' ? code39Modules(data) : field.symbology === 'ITF' ? itfModules(data) : code128Modules(data)
       const cols = mods.map((on) => new Array(h).fill(on))
       cols.push(new Array(h).fill(false))
       return { cols, h }

@@ -1,57 +1,57 @@
-# CIJ Trainer — Simulador Markem-Imaje S8 Classic / S8 Contrast / 9040
+# CIJ Trainer — Simulador Imaje S8 Classic / Markem-Imaje 9040
 
-PWA instalable (React 19 + Tailwind 3 + Vite 8 + vite-plugin-pwa) que simula la interfaz
-operador de impresoras de chorro de tinta continuo (CIJ), pensada para smartphone en horizontal.
-Funciona sin conexión una vez instalada.
+PWA instalable (React 19 + Tailwind 3 + Vite 8 + vite-plugin-pwa) para aprender a manejar dos
+codificadoras de chorro de tinta continuo con sus paneles reproducidos a escala:
 
-## Instalar en el teléfono
+| | Equipo A | Equipo B |
+|---|---|---|
+| Máquina | **Imaje S8 Classic** | **Markem-Imaje 9040** |
+| Chorros | 1 (chorro simple) | 2 (bichorro, 1 cabezal) |
+| Pantalla | LCD de 1 línea × 40 caracteres | LCD gráfico 640 × 200 con menús |
+| Teclado | membrana negra, teclas grises, ON/OFF, POWER/READY/FAULT/ALARM | banda morada, ON/OFF naranja, F1–F8, cruceta, teclado blanco con leyendas moradas |
 
-1. Abrir la URL publicada (HTTPS) en **Chrome (Android)** o **Safari (iPhone)**.
-2. Android: botón **⤓ Instalar** de la barra superior o menú ⋮ › *Instalar aplicación*.
-   iPhone: botón Compartir › *Añadir a pantalla de inicio*.
-3. Se abre a pantalla completa y en horizontal. Si el teléfono está en vertical, la interfaz
-   se gira sola 90°.
+## Cómo se usa
 
-## Uso local
+- **Menú principal**: elegir equipo → *Entrenamiento guiado* → *Misiones de planta* → *Práctica libre*.
+- **Entrenamiento guiado** (15 lecciones S8 / 16 lecciones 9040): cada paso señala la tecla con un
+  anillo amarillo, acerca la vista y dice qué escribir; avanza solo al hacerlo bien.
+- **Misiones** (15 por equipo, mismo objetivo con los pasos de cada máquina): se desbloquean al
+  terminar el entrenamiento. «💡 Pista» explica y señala la tecla siguiente.
+- **Zoom**: pellizco, arrastre, doble toque y botones ⤢ Todo / 🖵 Pantalla / ⌨ Teclado. Con el
+  teclado ampliado aparece una copia de la pantalla («espejo»).
+- **▤ Línea**: producto marcado, cabezal con lupa, potenciómetro de quiebra, levas/excéntricas,
+  limpieza y secado de placas, tinta, tapa y terminal V24.
+
+## Desarrollo
 
 ```bash
 npm install
-npm run dev        # desarrollo (accesible en la red local con --host)
-npm test           # 37 pruebas: motor, códigos de barras y las 15 misiones
-npm run build      # genera dist/ (PWA con service worker)
-BASE=/cij-simulator/ npm run build   # para publicar en una subcarpeta (GitHub Pages)
+npm run dev        # desarrollo
+npm test           # 82 pruebas: motor + «piloto automático» que completa las 31 lecciones y las
+                   # 30 misiones pulsando sólo las teclas que indica el tutor
+npm run build      # dist/ (PWA)
 ```
 
 ## Estructura
 
 ```
 src/
-  engine/            Motor de simulación (sin React, probado con Vitest)
-    sim.js           Marcha/paro, chorro, defectos, línea de producción, impresión
-    jet.js           Modelo físico: punto de quiebra, fase, canal, THT, kit aire
-    rtc.js           RTC con OFFSET, formatos de fecha, turnos
-    render.js        Mensaje (campos) -> matriz de gotas WYSIWYG
-    barcodes.js      Code 128 y DataMatrix ECC200 (verificados contra bwip-js)
-    font5x7.js       Fuente matricial y escalado de fuentes
-    faults.js        Catálogo de defectos y alarmas
-    missions.js      15 misiones: escenario + pasos validados automáticamente
-    defaults.js      Mensajes de ejemplo, E/S, modelos
-  state/
-    reducer.js       Acciones del operador -> eventos -> evaluación de misión
-    store.jsx        Contexto, bucle de simulación 4 Hz, persistencia, bus de teclas
-  components/        Chasis (teclas/LEDs), zonas de pantalla, teclados simulados,
-                     DotMatrix, JetView, Conveyor, panel de misiones
-  screens/           Producción, Edición, Preparación, Variables operador / V24
+  engine/            Motor (sin React): sim, chorro, RTC, render, códigos de barras (128, 39, 2/5,
+                     DataMatrix), misiones, entrenamiento, escenarios
+  machines/
+    s8classic/       firmware.js (funciones I1–I10, M9–M30, E1–E13), Panel.jsx, lessons.js
+    m9040/           firmware.js (menús, diálogos, estado), Screen9040.jsx (LCD 640×200), Panel.jsx, lessons.js
+    guide.js         qué tecla señalar en cada paso
+    registry.jsx     equipos disponibles
+  ui/                Menú, listas, vista de máquina con zoom, tutor, tarjeta de misión, cajón Línea
+  state/             reducer y store (persistencia local)
 ```
 
-## Fuentes técnicas
+## Fuentes
 
-Menús, parámetros y procedimientos tomados de los manuales locales: *S8 Contrast Instrucciones*
-(árbol de menús, zonas de pantalla, parámetros de mensaje, turno, caducidad, kit aire),
-*S8 Classic Printer Manual* (control de gotas `00111100`, diagnóstico de arranque),
-*9040 Book for Service Engineers* (variables de operador, Code 128, tablas de defectos,
-THT 3600-8100 V, presión 2,4-3,6 bar, fuga > 10 µA).
-
-Simplificaciones: el modelo físico es didáctico (no reproduce valores exactos de fábrica);
-los números de defecto son índices del simulador; la división tacométrica de referencia (1500)
-y la distancia entre boquillas del bichorro (24 mm) son valores de la línea simulada.
+Manuales locales: *Imaje S8 Classic Printer Manual* (A20733), *Markem-Imaje 9040 Manual del Usuario*
+(A36952), *9040 Book for Service Engineers*, *S8 Contrast Instrucciones*. Geometría de los paneles
+medida en las figuras de los manuales; textos de pantalla tal como aparecen en ellos (el S8 Classic
+en inglés, como en su manual). Simplificaciones: el modelo físico del chorro es didáctico; los ajustes
+mecánicos (potenciómetro, levas/excéntricas, limpieza de placas) se hacen en el cajón «Línea»; las
+funciones de técnico no incluidas muestran un aviso.

@@ -5,6 +5,8 @@ import {
   acknowledgeFaults, startDiag, activeFaults, canPrint, modelInfo, productPasses,
 } from '../engine/sim.js'
 import { startMission, evaluateMission } from '../engine/missions.js'
+import { startLesson, evaluateLesson, lessonNext, lessonBack } from '../engine/training.js'
+import { FIRMWARE, applyMachine } from '../machines/firmware.js'
 import { makeMessage, newId, defaultMessages, MODELS } from '../engine/defaults.js'
 import { offsetFor } from '../engine/rtc.js'
 import { CHARGE_ELECTRODE, headOverpressure } from '../engine/jet.js'
@@ -34,26 +36,74 @@ export function reducer(state, action) {
   const s = structuredClone(state)
   apply(s, action)
   evaluateMission(s)
+  evaluateLesson(s)
   return s
 }
 
-function apply(s, a) {
+export function apply(s, a) {
   switch (a.type) {
+    // ----- Aplicación (menú, entrenamiento, misiones)
+    case 'UI_SET': {
+      const prevMachine = s.ui.machine
+      s.ui = { ...s.ui, ...a.patch }
+      if (a.exit) {
+        s.lesson = null
+        s.mission = null
+      }
+      if (s.ui.machine !== prevMachine) applyMachine(s)
+      break
+    }
+    case 'EXIT_TO_MENU':
+      s.ui.screen = s.lesson ? 'LESSONS' : s.mission ? 'MISSIONS' : 'HOME'
+      s.lesson = null
+      s.mission = null
+      break
+    case 'PRACTICE_START':
+      s.lesson = null
+      s.mission = null
+      applyMachine(s)
+      s.ui.screen = 'MACHINE'
+      break
+    case 'LESSON_START':
+      applyMachine(s)
+      startLesson(s, s.ui.machine, a.id)
+      s.ui.screen = 'MACHINE'
+      break
+    case 'LESSON_NEXT':
+      lessonNext(s)
+      break
+    case 'LESSON_BACK':
+      lessonBack(s)
+      break
+    case 'MISSION_HINT':
+      if (s.mission) s.mission.hints = (s.mission.hints || 0) + 1
+      break
+    case 'UNLOCK_MISSIONS':
+      s.ui.unlocked = { ...(s.ui.unlocked || {}), [s.ui.machine]: true }
+      break
+    case 'KEY': {
+      const fw = FIRMWARE[s.ui.machine]
+      pushEvent(s, 'KEY', { key: a.key })
+      fw.press(s, a.key, (act) => apply(s, act))
+      break
+    }
     case 'TICK':
       tick(s, a.dt)
       break
     case 'HYDRATE':
       return Object.assign(s, a.state)
     case 'RESET_ALL': {
-      const progress = a.keepProgress ? s.progress : {}
-      Object.assign(s, createInitialState(), { progress })
+      const keep = a.keepProgress ? { progress: s.progress, training: s.training, ui: s.ui } : { ui: { ...createInitialState().ui, machine: s.ui.machine } }
+      Object.assign(s, createInitialState(), keep)
+      applyMachine(s)
       toast(s, 'Simulador reiniciado')
       break
     }
     case 'NAV': {
-      s.nav = { menu: a.menu ?? s.nav.menu, tab: a.tab ?? 0, view: a.view ?? null }
-      pushEvent(s, 'NAV', { menu: s.nav.menu, tab: s.nav.tab, view: s.nav.view })
-      if (s.nav.view === 'clock') pushEvent(s, 'RTC_VIEW')
+      // El firmware de cada equipo avisa cuando el operador entra en una pantalla
+      // (vistas estándar: select, clock, jet, adjust, encoder, head, io, deflect, faults, v24…)
+      pushEvent(s, 'NAV', { view: a.view })
+      if (a.view === 'clock') pushEvent(s, 'RTC_VIEW')
       break
     }
     case 'TOAST':
@@ -89,7 +139,7 @@ function apply(s, a) {
       if (s.messages[a.name]) {
         s.activeMessage = a.name
         pushEvent(s, 'SELECT_MESSAGE', { name: a.name })
-        toast(s, `Mensaje ${a.name} seleccionado para impresión`)
+        if (!a.quiet) toast(s, `Mensaje ${a.name} seleccionado para impresión`)
       }
       break
     case 'PAUSE_TOGGLE':
@@ -155,7 +205,7 @@ function apply(s, a) {
     case 'JET_VALIDATE': {
       const ok = s.jetState === 'RUNNING' && s.live.breakoff >= CHARGE_ELECTRODE.from && s.live.breakoff <= CHARGE_ELECTRODE.to && s.live.phaseOk
       pushEvent(s, 'JET_VALIDATE', { ok, breakoff: s.live.breakoff })
-      toast(s, ok ? 'Ajuste de punto de quiebra memorizado' : 'Ajuste incorrecto: punto de quiebra fuera de 8-10 gotas o fase incorrecta', ok ? 'ok' : 'warn')
+      if (!a.quiet) toast(s, ok ? 'Control de gotas correcto' : 'Fase incorrecta: punto de quiebra fuera del electrodo de carga', ok ? 'ok' : 'warn')
       break
     }
     case 'JET_MAINT': {
@@ -218,7 +268,7 @@ function apply(s, a) {
     // ----- Edición de mensajes
     case 'EDIT_NEW': {
       const name = a.name.toUpperCase().slice(0, 12)
-      s.editing = { message: makeMessage(name, [[]]), original: null, dirty: true }
+      s.editing = { message: makeMessage(name, [[]], a.extra || {}), original: null, dirty: true }
       pushEvent(s, 'EDIT_OPEN', { name, isNew: true })
       break
     }
@@ -250,8 +300,8 @@ function apply(s, a) {
       if (a.type === 'EDIT_LOAD_PRINTER') {
         s.activeMessage = m.name
         pushEvent(s, 'LOAD_PRINTER', { name: m.name })
-        toast(s, `${m.name} guardado y cargado en impresora`, 'ok')
-      } else toast(s, `${m.name} guardado`, 'ok')
+        if (!a.quiet) toast(s, `${m.name} guardado y cargado en impresora`, 'ok')
+      } else if (!a.quiet) toast(s, `${m.name} guardado`, 'ok')
       break
     }
     case 'MSG_DELETE':
@@ -323,6 +373,17 @@ function apply(s, a) {
       if (v) Object.assign(v, a.patch)
       break
     }
+    case 'OPVAR_ENSURE': {
+      const name = a.name.toUpperCase().slice(0, 10)
+      const v = s.opvars.find((o) => o.name === name)
+      if (v) Object.assign(v, { size: a.size, def: a.def })
+      else s.opvars.push({ name, size: a.size, def: a.def, value: '' })
+      pushEvent(s, 'OPVAR_DEF', { name })
+      break
+    }
+    case 'EDIT_INSERT_EVT':
+      pushEvent(s, 'EDIT_INSERT', { fieldType: a.fieldType })
+      break
     case 'OPVAR_ADD':
       if (s.opvars.length < 20 && !s.opvars.some((o) => o.name === a.name)) s.opvars.push({ name: a.name.toUpperCase().slice(0, 10), size: 8, def: '', value: '' })
       break
@@ -338,8 +399,10 @@ function apply(s, a) {
 
     // ----- Misiones
     case 'MISSION_START':
-      startMission(s, a.id)
-      toast(s, `Misión ${String(a.id).padStart(2, '0')} iniciada`, 'ok')
+      s.lesson = null
+      applyMachine(s)
+      startMission(s, s.ui.machine, a.id)
+      s.ui.screen = 'MACHINE'
       break
     case 'MISSION_ABORT':
       s.mission = null

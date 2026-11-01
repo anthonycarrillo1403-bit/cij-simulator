@@ -262,3 +262,57 @@ export function dataMatrix(text) {
   matrix[S - 1][S - 1] = true
   return { size: S, matrix, codewords: all }
 }
+
+// ---------------------------------------------------------------- Code 39 (S8 Classic)
+// 9 elementos por carácter (barra, espacio, barra…), 1 = ancho. Relación ancho/estrecho 3:1.
+const C39 = {
+  0: '000110100', 1: '100100001', 2: '001100001', 3: '101100000', 4: '000110001', 5: '100110000', 6: '001110000', 7: '000100101', 8: '100100100', 9: '001100100',
+  A: '100001001', B: '001001001', C: '101001000', D: '000011001', E: '100011000', F: '001011000', G: '000001101', H: '100001100', I: '001001100', J: '000011100',
+  K: '100000011', L: '001000011', M: '101000010', N: '000010011', O: '100010010', P: '001010010', Q: '000000111', R: '100000110', S: '001000110', T: '000010110',
+  U: '110000001', V: '011000001', W: '111000000', X: '010010001', Y: '110010000', Z: '011010000', '-': '010000101', '.': '110000100', ' ': '011000100',
+  '*': '010010100', $: '010101000', '/': '010100010', '+': '010001010', '%': '000101010',
+}
+
+export function code39Modules(text, wide = 3) {
+  const data = `*${String(text).toUpperCase().replace(/[^0-9A-Z\-. $/+%]/g, '')}*`
+  const mods = []
+  for (const ch of data) {
+    const p = C39[ch]
+    for (let i = 0; i < 9; i++) {
+      const w = p[i] === '1' ? wide : 1
+      for (let k = 0; k < w; k++) mods.push(i % 2 === 0)
+    }
+    mods.push(false) // separación entre caracteres
+  }
+  return mods
+}
+
+// ---------------------------------------------------------------- 2/5 entrelazado (ITF)
+const ITF = ['00110', '10001', '01001', '11000', '00101', '10100', '01100', '00011', '10010', '01010']
+
+export function itfModules(text, wide = 3) {
+  let digits = String(text).replace(/\D/g, '') || '0'
+  if (digits.length % 2) digits = `0${digits}`
+  const mods = []
+  const put = (bar, w) => {
+    for (let k = 0; k < w; k++) mods.push(bar)
+  }
+  // inicio: barra-espacio-barra-espacio estrechos
+  put(true, 1)
+  put(false, 1)
+  put(true, 1)
+  put(false, 1)
+  for (let i = 0; i < digits.length; i += 2) {
+    const a = ITF[+digits[i]]
+    const b = ITF[+digits[i + 1]]
+    for (let k = 0; k < 5; k++) {
+      put(true, a[k] === '1' ? wide : 1)
+      put(false, b[k] === '1' ? wide : 1)
+    }
+  }
+  // fin: barra ancha, espacio estrecho, barra estrecha
+  put(true, wide)
+  put(false, 1)
+  put(true, 1)
+  return mods
+}

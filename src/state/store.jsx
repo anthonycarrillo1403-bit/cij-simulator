@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useReducer, useRef, useCallback } from 'react'
 import { reducer } from './reducer.js'
 import { createInitialState } from '../engine/sim.js'
+import { applyMachine } from '../machines/firmware.js'
 
-const KEY = 'cij-sim-v1'
+const KEY = 'cij-sim-v2'
 const StoreCtx = createContext(null)
 
 function deepMerge(base, saved) {
@@ -20,16 +21,23 @@ function load() {
   const init = createInitialState()
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return init
+    if (!raw) {
+      applyMachine(init)
+      return init
+    }
     const saved = JSON.parse(raw)
     if (saved.version !== init.version) return init
     const merged = deepMerge(init, saved)
     // los mensajes se guardan tal cual (no se mezclan con los de ejemplo)
     if (saved.messages) merged.messages = saved.messages
-    merged.nav = { menu: 'HOME', tab: 0, view: null }
+    merged.ui.screen = 'HOME'
+    merged.lesson = null
+    merged.mission = null
     merged.toast = null
+    applyMachine(merged)
     return merged
   } catch {
+    applyMachine(init)
     return init
   }
 }
