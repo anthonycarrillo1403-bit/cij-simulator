@@ -39,6 +39,8 @@ function Router() {
       return <MachineView />
     case 'LESSONS':
       return <LessonsScreen />
+    case 'CODIF':
+      return <LessonsScreen group="codif" />
     case 'MISSIONS':
       return <MissionsScreen />
     case 'HELP':

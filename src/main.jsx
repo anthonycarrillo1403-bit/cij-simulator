@@ -37,6 +37,17 @@ class ErrorBoundary extends Component {
   }
 }
 
+// Instalación como app: se guarda el aviso del navegador para el botón «Instalar» del menú.
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault()
+  window.__installPrompt = e
+  window.dispatchEvent(new Event('cij-installable'))
+})
+window.addEventListener('appinstalled', () => {
+  window.__installPrompt = null
+  window.dispatchEvent(new Event('cij-installable'))
+})
+
 // Pantalla completa al primer toque (sólo cuando corre instalada como app).
 function enterFullscreenOnce() {
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone

@@ -6,7 +6,7 @@ import { useStore } from '../../state/store.jsx'
 import { glyphColumns } from '../../engine/font5x7.js'
 import { SPECIAL } from '../LcdDots.jsx'
 import { rtcNow, pad } from '../../engine/rtc.js'
-import { rasterMessage } from '../../engine/render.js'
+import { rasterMessage, printCtx } from '../../engine/render.js'
 import { MENUS, FORMS, view, cellLabel, jetStateLabel, DEFECT_TEXT, FONTS_9040 } from './firmware.js'
 
 const W = 640
@@ -281,7 +281,7 @@ function drawProd(g, s) {
   const { px, text, tw, rect } = g
   const m = s.messages[s.activeMessage]
   if (m) {
-    const r = rasterMessage(m, { now: rtcNow(s.rtcOffset), opvars: s.opvars, v24: s.hw.v24 })
+    const r = rasterMessage(m, printCtx(s, rtcNow(s.rtcOffset)))
     const dot = Math.max(1, Math.min(3, Math.floor(Math.min(600 / Math.max(1, r.width), 110 / Math.max(1, r.height)))))
     const ox = Math.round(320 - (r.width * dot) / 2)
     const oy = Math.round(32 + (112 - r.height * dot) / 2)

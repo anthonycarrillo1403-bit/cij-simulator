@@ -14,6 +14,12 @@ export function offsetFor(target, systemNow = Date.now()) {
 
 export const pad = (n, w = 2) => String(n).padStart(w, '0')
 
+// «Hora cambio fecha» (hh:mm) en minutos: antes de esa hora las fechas siguen con el día anterior.
+export function dateChangeMin(hhmm) {
+  const m = /^(\d\d):(\d\d)$/.exec(hhmm || '')
+  return m ? +m[1] * 60 + +m[2] : 0
+}
+
 export const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
 
 export function dayOfYear(d) {

@@ -5,7 +5,7 @@ import {
   acknowledgeFaults, startDiag, activeFaults, canPrint, modelInfo, productPasses,
 } from '../engine/sim.js'
 import { startMission, evaluateMission } from '../engine/missions.js'
-import { startLesson, evaluateLesson, lessonNext, lessonBack } from '../engine/training.js'
+import { startLesson, evaluateLesson, lessonNext, lessonBack, lessonGroup } from '../engine/training.js'
 import { FIRMWARE, applyMachine } from '../machines/firmware.js'
 import { makeMessage, newId, defaultMessages, MODELS } from '../engine/defaults.js'
 import { offsetFor } from '../engine/rtc.js'
@@ -54,16 +54,29 @@ export function apply(s, a) {
       break
     }
     case 'EXIT_TO_MENU':
-      s.ui.screen = s.lesson ? 'LESSONS' : s.mission ? 'MISSIONS' : 'HOME'
+      s.ui.screen = s.lesson ? (lessonGroup(s.lesson.machine, s.lesson.id) === 'codif' ? 'CODIF' : 'LESSONS') : s.mission ? 'MISSIONS' : 'HOME'
       s.lesson = null
       s.mission = null
       break
-    case 'PRACTICE_START':
+    case 'PRACTICE_START': {
+      // Práctica libre: impresora encendida y pantalla en Producción, sin diálogos
+      // ni ediciones pendientes de una lección anterior (antes parecía que «no respondía»).
       s.lesson = null
       s.mission = null
       applyMachine(s)
+      const m = s.ui.machine
+      s.fw[m] = FIRMWARE[m].init()
+      s.editing = null
+      if (s.power !== 'ON') {
+        s.power = 'ON'
+        s.powerTimer = 0
+        s.jetState = 'STOPPED'
+      }
+      if (s.jetState === 'STOPPED' && !Object.keys(s.faults).length) startJet(s)
+      s.paused = false
       s.ui.screen = 'MACHINE'
       break
+    }
     case 'LESSON_START':
       applyMachine(s)
       startLesson(s, s.ui.machine, a.id)
@@ -169,6 +182,7 @@ export function apply(s, a) {
     }
     case 'SET_LINE':
       s.line[a.key] = a.value
+      if (a.key === 'headY') pushEvent(s, 'HEAD_MOVE', { y: a.value })
       break
     case 'PRODUCT_TRIGGER':
       productPasses(s)
@@ -254,7 +268,7 @@ export function apply(s, a) {
       const target = new Date(a.y, a.mo - 1, a.d, a.h, a.m, a.sec || 0)
       s.rtcOffset = offsetFor(target)
       s.rtcLastSet = { sys: Date.now(), target: target.getTime() }
-      pushEvent(s, 'RTC_SET', { h: a.h, m: a.m })
+      pushEvent(s, 'RTC_SET', { h: a.h, m: a.m, y: a.y, mo: a.mo, d: a.d })
       toast(s, 'Reloj ajustado. El RTC continúa avanzando desde la nueva hora.', 'ok')
       break
     }

@@ -16,6 +16,8 @@ export function prep(s, { power = 'ON', jet = 'RUNNING', resetMsgs = false, keep
   s.hw.io = structuredClone(hwDef.io)
   s.hw.startMode = 'AUTO'
   s.hw.clockStop = false
+  s.hw.dateChange = '00:00'
+  s.line.headY = 0
   s.hw.head = { ...hwDef.head }
   machineHw(m, s.hw)
   if (m === 'M9040') s.hw.head.orient = { j1: 0, j2: 0 }

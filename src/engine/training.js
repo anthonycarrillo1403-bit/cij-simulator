@@ -13,14 +13,18 @@
 import { pushEvent } from './sim.js'
 import { FIRMWARE } from '../machines/firmware.js'
 import { lessons9040 } from '../machines/m9040/lessons.js'
+import { codifLessons9040 } from '../machines/m9040/codifLessons.js'
 
 const LESSONS = { M9040_1: lessons9040(1), M9040: lessons9040(2) }
+// Módulo de codificación (aparte: no bloquea ni desbloquea las misiones)
+const CODIF = { M9040_1: codifLessons9040(1), M9040: codifLessons9040(2) }
 
-export const lessonsFor = (machine) => LESSONS[machine] || []
-export const lessonById = (machine, id) => lessonsFor(machine).find((l) => l.id === id)
+export const lessonsFor = (machine, group = 'base') => (group === 'codif' ? CODIF[machine] : LESSONS[machine]) || []
+export const lessonById = (machine, id) => lessonsFor(machine).find((l) => l.id === id) || lessonsFor(machine, 'codif').find((l) => l.id === id)
+export const lessonGroup = (machine, id) => (lessonsFor(machine, 'codif').some((l) => l.id === id) ? 'codif' : 'base')
 
-export function trainingStatus(s, machine) {
-  const list = lessonsFor(machine)
+export function trainingStatus(s, machine, group = 'base') {
+  const list = lessonsFor(machine, group)
   const done = list.filter((l) => s.training?.[machine]?.[l.id]).length
   return { done, total: list.length, complete: list.length > 0 && done >= list.length }
 }

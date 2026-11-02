@@ -45,7 +45,9 @@ export function Coach({ autoZoom, setAutoZoom, onShowKey, hasKey, onDrawer, onMi
   const machine = state.ui.machine
   const def = lessonById(L.machine, L.id)
   if (!def) return null
-  const list = lessonsFor(machine)
+  const group = def.group === 'codif' ? 'codif' : 'base'
+  const list = lessonsFor(machine, group)
+  const listScreen = group === 'codif' ? 'CODIF' : 'LESSONS'
   const idx = list.findIndex((l) => l.id === def.id)
   const nextLesson = list[idx + 1]
   const st = currentStep(state)
@@ -63,12 +65,16 @@ export function Coach({ autoZoom, setAutoZoom, onShowKey, hasKey, onDrawer, onMi
             <button type="button" className="flex-1 rounded-lg bg-emerald-500 px-2 py-1.5 text-[13px] font-black" onClick={() => dispatch({ type: 'LESSON_START', id: nextLesson.id })}>
               Siguiente lección ›
             </button>
+          ) : group === 'codif' ? (
+            <button type="button" className="flex-1 rounded-lg bg-fuchsia-500 px-2 py-1.5 text-[13px] font-black" onClick={() => dispatch({ type: 'PRACTICE_START' })}>
+              Practicar libre ›
+            </button>
           ) : (
             <button type="button" className="flex-1 rounded-lg bg-amber-500 px-2 py-1.5 text-[13px] font-black" onClick={() => dispatch({ type: 'UI_SET', patch: { screen: 'MISSIONS' }, exit: true })}>
               ¡Ir a las misiones! ›
             </button>
           )}
-          <button type="button" className="rounded-lg bg-black/30 px-2 py-1.5 text-[12px] font-bold" onClick={() => dispatch({ type: 'UI_SET', patch: { screen: 'LESSONS' }, exit: true })}>
+          <button type="button" className="rounded-lg bg-black/30 px-2 py-1.5 text-[12px] font-bold" onClick={() => dispatch({ type: 'UI_SET', patch: { screen: listScreen }, exit: true })}>
             Lecciones
           </button>
         </div>
@@ -92,7 +98,7 @@ export function Coach({ autoZoom, setAutoZoom, onShowKey, hasKey, onDrawer, onMi
       <div className="mt-1 h-1 overflow-hidden rounded-full bg-black/30">
         <div className="h-full bg-emerald-400 transition-all" style={{ width: `${(L.step / def.steps.length) * 100}%` }} />
       </div>
-      <div className="mt-1.5 text-[13.5px] font-semibold leading-snug">
+      <div className="mt-1.5 whitespace-pre-line text-[13.5px] font-semibold leading-snug">
         <span className="mr-1 rounded bg-emerald-500 px-1 text-[11px] font-black">{L.step + 1}</span>
         {renderRich(text, keyLabel)}
       </div>

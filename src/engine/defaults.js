@@ -102,6 +102,7 @@ export function defaultHardware() {
     faultInhibit: { cover: false, recup: false },
     language: 'ESPAÑOL',
     autoClock: true,
+    dateChange: '00:00', // Hora cambio fecha (hh:mm)
   }
 }
 

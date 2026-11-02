@@ -1,7 +1,7 @@
 // Composición de mensajes: campos -> texto -> matriz de puntos (tramas).
 import { rasterizeText, FONTS } from './font5x7.js'
 import { code128Modules, code39Modules, itfModules, dataMatrix } from './barcodes.js'
-import { addDays, addMonths, formatDate, formatClock, shiftCode, pad } from './rtc.js'
+import { addDays, addMonths, formatDate, formatClock, shiftCode, pad, dateChangeMin } from './rtc.js'
 
 export const FIELD_LABELS = {
   text: 'Texto',
@@ -40,15 +40,16 @@ function opvarText(name, ctx) {
 // Texto "humano" de un campo con los datos actuales (RTC, contadores, V24…).
 export function fieldText(field, ctx) {
   const m = ctx.message
+  const dnow = ctx.dateChangeMin ? new Date(ctx.now.getTime() - ctx.dateChangeMin * 60000) : ctx.now
   switch (field.type) {
     case 'text':
       return field.value
     case 'date':
-      return formatDate(ctx.now, field.format)
+      return formatDate(dnow, field.format)
     case 'clock':
       return formatClock(ctx.now, field.format)
     case 'expiry':
-      return formatDate(expiryDate(ctx.now, field.slot === 2 ? m.expiry2 : m.expiry), field.format)
+      return formatDate(expiryDate(dnow, field.slot === 2 ? m.expiry2 : m.expiry), field.format)
     case 'shift':
       return shiftCode(ctx.now, m.shift)
     case 'counter':
@@ -73,10 +74,15 @@ export function barcodeData(field, ctx) {
     case 'counter':
       return counterText(ctx.message.counter).trim()
     case 'date':
-      return formatDate(ctx.now, 'YYMMDD')
+      return formatDate(ctx.dateChangeMin ? new Date(ctx.now.getTime() - ctx.dateChangeMin * 60000) : ctx.now, 'YYMMDD')
     default:
       return field.value || '0'
   }
+}
+
+// Contexto de composición de la impresora (reloj, variables, V24, hora de cambio de fecha)
+export function printCtx(s, now) {
+  return { now, opvars: s.opvars, v24: s.hw.v24, dateChangeMin: dateChangeMin(s.hw.dateChange) }
 }
 
 // Rasteriza un campo: devuelve { cols, h } con columnas booleanas (índice 0 = abajo).
@@ -150,6 +156,16 @@ export function messageFields(message) {
 }
 
 export { FONTS }
+
+// Geometría sobre el producto: paso de gota ≈ 0,6 mm; cara del producto 120 × 40 mm
+export const DOTS_PER_MM = 2.8 // tramas por mm (desfase entre chorros)
+export const PRINT_DOTS_PER_MM = 1.6
+export const PRODUCT_MM = { w: 120, h: 40 }
+export function printSizeMm(p) {
+  return { w: (p.w * p.wf) / PRINT_DOTS_PER_MM, h: (p.h * p.hf) / PRINT_DOTS_PER_MM }
+}
+// Retardo ida que deja el marcaje centrado a lo largo del producto
+export const centeredDelay = (p) => Math.max(0, Math.round((PRODUCT_MM.w - printSizeMm(p).w) / 2))
 
 // Altura máxima imprimible por chorro según el cabezal (puntos)
 export const MAX_DOTS_PER_JET = 32

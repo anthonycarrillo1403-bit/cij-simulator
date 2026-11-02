@@ -8,7 +8,7 @@
 // CAPS, SHIFT, SHIFTR, CTRL, CTRLR, ALT, ALTR, SPACE.
 import { rtcNow, pad } from '../../engine/rtc.js'
 import { newId } from '../../engine/defaults.js'
-import { fieldText } from '../../engine/render.js'
+import { fieldText, printCtx } from '../../engine/render.js'
 import { FAULTS } from '../../engine/faults.js'
 
 // ------------------------------------------------------------------ teclado
@@ -175,7 +175,7 @@ function insertField(s, fw, field, act) {
 }
 export function cellLabel(cell, s) {
   if (!cell.f) return cell.c
-  const ctx = { now: rtcNow(s.rtcOffset), opvars: s.opvars, v24: s.hw.v24, message: edMsg(s) }
+  const ctx = { ...printCtx(s, rtcNow(s.rtcOffset)), message: edMsg(s) }
   return fieldText(cell.f, ctx)
 }
 
@@ -426,13 +426,14 @@ export const FORMS = {
     ],
     load: (s) => {
       const d = rtcNow(s.rtcOffset)
-      return { time: `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`, frozen: !!s.hw.clockStop, date: `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${pad(d.getFullYear() % 100)}`, fmt: 'dd/mm/aa', change: '00:00' }
+      return { time: `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`, frozen: !!s.hw.clockStop, date: `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${pad(d.getFullYear() % 100)}`, fmt: 'dd/mm/aa', change: s.hw.dateChange || '00:00' }
     },
     check: (v) => {
       if (!timeOk(v.time, true)) return 'Hora incorrecta (hh:mm:ss)'
       const [dd, mo, yy] = v.date.split('/').map(Number)
       const test = new Date(2000 + yy, mo - 1, dd)
       if (!/^\d\d\/\d\d\/\d\d$/.test(v.date) || test.getDate() !== dd || mo < 1 || mo > 12) return 'Fecha incorrecta (dd/mm/aa)'
+      if (!timeOk(v.change)) return 'Hora cambio fecha incorrecta (hh:mm)'
       return null
     },
     save: (s, fw, d, act) => {
@@ -443,6 +444,7 @@ export const FORMS = {
       const dateChanged = dd !== before.getDate() || mo !== before.getMonth() + 1 || yy !== before.getFullYear() % 100
       if (timeChanged || dateChanged) act({ type: 'RTC_SET', y: 2000 + yy, mo, d: dd, h, m, sec })
       s.hw.clockStop = d.v.frozen
+      if ((s.hw.dateChange || '00:00') !== d.v.change) act({ type: 'SET_HW', path: 'dateChange', value: d.v.change })
     },
   },
   orient: {
@@ -1169,7 +1171,10 @@ export function press(s, key, act) {
     } else if (s.power === 'ON') askStop(fw)
     return
   }
-  if (s.power !== 'ON') return
+  if (s.power !== 'ON') {
+    act({ type: 'TOAST', text: s.power === 'OFF' ? 'Impresora apagada: presione ON/OFF (tecla naranja)' : s.power === 'BOOT' ? 'Arrancando… espere unos segundos' : 'Parando… espere', kind: 'warn' })
+    return
+  }
 
   // Ctrl + flechas = contraste; Ctrl + P = impresión manual
   if (fw.ctrl && (key === 'P')) {
@@ -1425,6 +1430,7 @@ const TARGETS = {
   varCounter: { mode: 'EDIT', bar: 2, item: 0 },
   varShift: { mode: 'EDIT', bar: 2, item: 7 },
   bcCompose: { mode: 'EDIT', bar: 1, item: 4, dlgForm: 'bcCompose' },
+  saveas: { mode: 'EDIT', bar: 0, item: 3, dlgForm: 'saveas' },
   prod: { mode: 'PROD' },
 }
 export const targetDef = (name) => TARGETS[name]

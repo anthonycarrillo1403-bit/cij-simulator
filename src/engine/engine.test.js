@@ -118,6 +118,7 @@ function physical(st) {
   if (/Secar/i.test(txt) && s.hidden.platesWet && !s.diag.running) d({ type: 'DIAG_START', step: 'DRY' })
   if (/Rellenar tinta/i.test(txt) && s.hidden.inkLevel < 50) d({ type: 'INK_SET', level: 98 })
   if (/Terminal V24/i.test(txt)) d({ type: 'V24_FRAME', data: 'PED123' })
+  if (/Bajar/i.test(txt) && (s.line.headY || 0) !== 0) d({ type: 'SET_LINE', key: 'headY', value: 0 })
 }
 
 function missionStep() {
@@ -152,6 +153,16 @@ function drive(kind) {
 for (const machine of ['M9040_1', 'M9040']) {
   describe(`Entrenamiento guiado · ${machine}`, () => {
     for (const lesson of lessonsFor(machine)) {
+      it(`lección «${lesson.title}» se completa siguiendo al tutor`, () => {
+        boot(machine)
+        d({ type: 'LESSON_START', id: lesson.id })
+        const r = drive('lesson')
+        expect(r.ok, JSON.stringify(r)).toBe(true)
+      })
+    }
+  })
+  describe(`Codificación · ${machine}`, () => {
+    for (const lesson of lessonsFor(machine, 'codif')) {
       it(`lección «${lesson.title}» se completa siguiendo al tutor`, () => {
         boot(machine)
         d({ type: 'LESSON_START', id: lesson.id })

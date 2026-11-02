@@ -27,7 +27,8 @@ const rnd = (i) => {
  *  - color: color de las gotas
  *  - split: { atLine, offsetPx } desplazamiento del chorro 2 (bichorro)
  */
-export default function DotMatrix({ cols, bits, w, h, wf = 1, hf = 1, quality = 1, maxPitch = 6, color, align = 'center', twin, className = '' }) {
+// flipX: marcaje en espejo (sentido de impresión equivocado) · flipY: marcaje cabeza abajo (impresión inversa)
+export default function DotMatrix({ cols, bits, w, h, wf = 1, hf = 1, quality = 1, maxPitch = 6, color, align = 'center', twin, flipX = false, flipY = false, pad = 4, className = '' }) {
   const box = useRef(null)
   const canvas = useRef(null)
   const size = useSize(box)
@@ -45,12 +46,12 @@ export default function DotMatrix({ cols, bits, w, h, wf = 1, hf = 1, quality = 
     g.clearRect(0, 0, size.w, size.h)
     if (!width || !height) return
     const twinShift = twin ? Math.abs(twin.offsetDots) : 0
-    const pitch = Math.min(maxPitch, (size.w - 4) / (width * wf + twinShift + 1), (size.h - 4) / (height * hf + 1))
+    const pitch = Math.min(maxPitch, (size.w - pad) / (width * wf + twinShift + (pad ? 1 : 0)), (size.h - pad) / (height * hf + (pad ? 1 : 0)))
     const px = pitch * wf
     const py = pitch * hf
     const r = Math.max(0.6, pitch * 0.42)
     const totalW = width * px + twinShift * pitch
-    const x0 = align === 'left' ? 2 : (size.w - totalW) / 2
+    const x0 = align === 'left' ? pad / 2 : (size.w - totalW) / 2
     const y0 = (size.h + height * py) / 2
     const fill = color || getComputedStyle(c).getPropertyValue('--dot') || '#000'
     g.fillStyle = fill.trim() || '#000'
@@ -68,16 +69,18 @@ export default function DotMatrix({ cols, bits, w, h, wf = 1, hf = 1, quality = 
           dx = (rnd(i + 7) - 0.5) * pitch * q * 2.2
           dy = (rnd(i + 13) - 0.5) * pitch * q * 3
         }
+        const X = flipX ? width - 1 - x : x
+        const Y = flipY ? height - 1 - y : y
         let sx = 0
-        if (twin && y < twin.splitY) sx = twin.offsetDots * pitch
-        const cx = x0 + (twin && twin.offsetDots < 0 ? twinShift * pitch : 0) + x * px + px / 2 + dx + sx
-        const cy = y0 - y * py - py / 2 + dy
+        if (twin && Y < twin.splitY) sx = twin.offsetDots * pitch
+        const cx = x0 + (twin && twin.offsetDots < 0 ? twinShift * pitch : 0) + X * px + px / 2 + dx + sx
+        const cy = y0 - Y * py - py / 2 + dy
         g.beginPath()
         g.ellipse(cx, cy, Math.max(0.6, r * Math.min(wf, 1.6)), Math.max(0.6, r * Math.min(hf, 1.4)), 0, 0, Math.PI * 2)
         g.fill()
       }
     }
-  }, [cols, bits, width, height, size.w, size.h, wf, hf, quality, maxPitch, color, align, twin])
+  }, [cols, bits, width, height, size.w, size.h, wf, hf, quality, maxPitch, color, align, twin, flipX, flipY, pad])
 
   return (
     <div ref={box} className={`relative h-full w-full ${className}`}>

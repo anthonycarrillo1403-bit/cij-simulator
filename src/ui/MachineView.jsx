@@ -24,7 +24,7 @@ function ZoomButton({ children, onClick, active }) {
 export default function MachineView() {
   const { state, dispatch } = useStore()
   const machine = MACHINES[state.ui.machine]
-  const { layout, Panel, Display } = machine
+  const { layout, Panel } = machine
   const vp = useRef(null)
   const [view, setView] = useState({ zoomed: false })
   const [drawer, setDrawer] = useState(false)
@@ -76,20 +76,6 @@ export default function MachineView() {
 
   const onViewChange = useCallback((v) => setView(v), [])
 
-  // Espejo de la pantalla: visible cuando la pantalla real queda fuera de la vista
-  const [mirror, setMirror] = useState(false)
-  const [mirrorAt, setMirrorAt] = useState('top')
-  useEffect(() => {
-    if (!vp.current) return
-    setMirror(view.zoomed && !vp.current.isVisible(layout.regions.screen, 10))
-    // el espejo se coloca en el borde contrario a la tecla señalada, para no taparla
-    const r = keyRect || regionRect
-    if (r && view.s) {
-      const cy = (r.y + r.h / 2) * view.s + view.y
-      setMirrorAt(cy < (vp.current.box?.h || 300) / 2 ? 'bottom' : 'top')
-    } else setMirrorAt('top')
-  }, [view, layout, keyRect, regionRect])
-
   const mode = state.lesson ? 'lesson' : state.mission ? 'mission' : 'free'
 
   return (
@@ -138,18 +124,6 @@ export default function MachineView() {
           {keyRect && <CoachRing rect={keyRect} />}
           {regionRect && <CoachRing rect={regionRect} region />}
         </Viewport>
-
-        {mirror && (
-          <button
-            type="button"
-            onClick={() => zoomPreset('screen')}
-            className={`absolute right-1 z-20 rounded-md border-2 border-slate-900 shadow-2xl ${mirrorAt === 'top' ? 'top-1' : 'bottom-1'}`}
-            style={{ width: 'min(420px, 58%)' }}
-            title="Pantalla (toque para ampliar)"
-          >
-            <Display mirror />
-          </button>
-        )}
 
         <LineDrawer open={drawer} onClose={() => setDrawer(false)} focus={drawerFocus} />
       </div>

@@ -19,21 +19,26 @@ function Header({ title, sub, onBack }) {
   )
 }
 
-export function LessonsScreen() {
+export function LessonsScreen({ group = 'base' }) {
   const { state, dispatch } = useStore()
   const machine = state.ui.machine
   const M = MACHINES[machine]
-  const list = lessonsFor(machine)
-  const tr = trainingStatus(state, machine)
+  const list = lessonsFor(machine, group)
+  const tr = trainingStatus(state, machine, group)
+  const codif = group === 'codif'
   const doneMap = state.training[machine] || {}
   const firstPending = list.find((l) => !doneMap[l.id])
   return (
     <div className="flex h-full flex-col bg-[#0b1220] text-white">
-      <Header title={`Entrenamiento guiado · ${M.label}`} sub={`${tr.done} de ${tr.total} lecciones completadas · ${M.tag}`} onBack={() => dispatch({ type: 'UI_SET', patch: { screen: 'HOME' } })} />
+      <Header title={`${codif ? 'Codificación' : 'Entrenamiento guiado'} · ${M.label}`} sub={`${tr.done} de ${tr.total} lecciones completadas · ${M.tag}`} onBack={() => dispatch({ type: 'UI_SET', patch: { screen: 'HOME' } })} />
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
-        <div className="mb-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-2 text-[12px] leading-snug text-emerald-50">
-          Haz las lecciones en orden. En cada paso te digo <b>qué tecla presionar</b> (aparece con un anillo amarillo) y <b>qué escribir</b>.
-          El paso avanza solo cuando lo haces bien. Al terminar todas, se desbloquean las misiones.
+        <div className={`mb-2 rounded-lg border p-2 text-[12px] leading-snug ${codif ? 'border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-50' : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-50'}`}>
+          {codif ? (
+            <>Situaciones reales de <b>codificación</b>: aspecto del código (tamaño, espejo, invertido, centrado), código completo de producto, cambio de código por orden nueva, fecha pasada, lote juliano y fecha que cambia a las 06:00. Te guío tecla por tecla y el resultado se ve en <b>▤ Línea</b>.</>
+          ) : (
+            <>Haz las lecciones en orden. En cada paso te digo <b>qué tecla presionar</b> (aparece con un anillo amarillo) y <b>qué escribir</b>.
+          El paso avanza solo cuando lo haces bien. Al terminar todas, se desbloquean las misiones.</>
+          )}
           {firstPending && (
             <button type="button" className="ml-2 rounded-md bg-emerald-500 px-2 py-0.5 font-black" onClick={() => dispatch({ type: 'LESSON_START', id: firstPending.id })}>
               Continuar: {firstPending.title} ›

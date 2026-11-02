@@ -17,9 +17,9 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['icons/favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Simulador CIJ Imaje S8 Classic / Markem-Imaje 9040',
+        name: 'CIJ Trainer · Markem-Imaje 9040',
         short_name: 'CIJ Trainer',
-        description: 'Entrenamiento guiado y misiones con los paneles reales de la Imaje S8 Classic (chorro simple) y la Markem-Imaje 9040 (doble chorro).',
+        description: 'Entrenamiento guiado, codificación y misiones con el panel real de la Markem-Imaje 9040 (monochorro y bichorro).',
         lang: 'es',
         id: appUrl,
         start_url: appUrl,

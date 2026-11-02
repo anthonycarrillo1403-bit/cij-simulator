@@ -1,5 +1,5 @@
 // Menú principal de la aplicación: elegir equipo, entrenamiento guiado, misiones y práctica libre.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { MACHINES, MACHINE_IDS } from '../machines/registry.jsx'
 import { lessonsFor, trainingStatus } from '../engine/training.js'
@@ -52,12 +52,54 @@ function BigButton({ n, title, sub, onClick, color, locked, progress }) {
   )
 }
 
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || window.navigator.standalone
+
+// Botón para instalar la app con su icono (o instrucciones si el navegador no lo ofrece)
+function InstallBar() {
+  const [canPrompt, setCanPrompt] = useState(Boolean(window.__installPrompt))
+  const [help, setHelp] = useState(false)
+  useEffect(() => {
+    const h = () => setCanPrompt(Boolean(window.__installPrompt))
+    window.addEventListener('cij-installable', h)
+    return () => window.removeEventListener('cij-installable', h)
+  }, [])
+  if (isStandalone()) return null
+  const install = async () => {
+    const p = window.__installPrompt
+    if (!p) return setHelp(true)
+    p.prompt()
+    try {
+      await p.userChoice
+    } catch {
+      /* */
+    }
+    window.__installPrompt = null
+    setCanPrompt(false)
+  }
+  return (
+    <div className="rounded-lg border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[11px] leading-snug text-sky-50">
+      <div className="flex items-center gap-2">
+        <span>📲 Para abrir desde un <b>icono</b> en el teléfono, instala la app:</span>
+        <button type="button" onClick={install} className="ml-auto shrink-0 rounded-md bg-sky-500 px-2 py-1 text-[12px] font-black text-white">
+          {canPrompt ? 'Instalar app' : '¿Cómo instalar?'}
+        </button>
+      </div>
+      {help && (
+        <div className="mt-1 text-sky-100/90">
+          1) Si ya tienes un icono «CIJ Trainer» que no abre, <b>mantenlo presionado › Desinstalar / Quitar</b>. 2) Abre este enlace en <b>Chrome</b>. 3) Menú <b>⋮</b> › <b>Instalar aplicación</b> (o «Agregar a pantalla principal» › Instalar). 4) Abre la app desde el icono nuevo. En iPhone: Safari › Compartir › «Agregar a inicio».
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Home() {
   const { state, dispatch } = useStore()
   const machine = state.ui.machine
   const [confirmReset, setConfirmReset] = useState(false)
   const lessons = lessonsFor(machine)
   const tr = trainingStatus(state, machine)
+  const trC = trainingStatus(state, machine, 'codif')
   const missions = missionsFor(machine)
   const doneMissions = missions.filter((m) => state.progress[machine]?.[m.id]).length
   const unlocked = missionUnlocked(state, machine)
@@ -76,6 +118,8 @@ export default function Home() {
           ? Cómo usar
         </button>
       </div>
+
+      <InstallBar />
 
       <div>
         <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">1 · Elige el equipo</div>
@@ -97,6 +141,14 @@ export default function Home() {
         />
         <BigButton
           n="3"
+          title="Codificación"
+          sub={`${trC.done} de ${trC.total} · tamaño, espejo, centrado, código completo, cambio de código, fechas`}
+          color="bg-gradient-to-br from-fuchsia-600 to-purple-900"
+          progress={trC.total ? trC.done / trC.total : 0}
+          onClick={() => go('CODIF')}
+        />
+        <BigButton
+          n="4"
           title="Misiones de planta"
           sub={unlocked ? `${doneMissions} de ${missions.length} completadas · con pistas si te atascas` : 'Se desbloquean al terminar el entrenamiento'}
           color="bg-gradient-to-br from-amber-600 to-orange-800"
@@ -105,7 +157,7 @@ export default function Home() {
           onClick={() => go('MISSIONS')}
         />
         <BigButton
-          n="4"
+          n="5"
           title="Práctica libre"
           sub="La máquina sola, sin guía, para practicar a tu ritmo"
           color="bg-gradient-to-br from-sky-600 to-indigo-800"

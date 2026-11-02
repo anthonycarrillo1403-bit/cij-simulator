@@ -8,7 +8,7 @@ import {
   PRESSURE_MIN, PRESSURE_MAX, EHT_LEAK_LIMIT, EHT_NOMINAL, ENCODER_DIVISION_REF,
 } from './jet.js'
 import { FAULTS, isBlocking } from './faults.js'
-import { rasterMessage } from './render.js'
+import { rasterMessage, printCtx } from './render.js'
 import { rtcNow } from './rtc.js'
 
 export const BOOT_MS = 3000
@@ -44,7 +44,7 @@ export function createInitialState() {
     timers: { recup: 0, pressure: 0, phase: 0 },
     faults: {},
     faultLog: [],
-    line: { running: true, speed: 30, pitch: 250, travel: 0, sensorType: 'PNP' },
+    line: { running: true, speed: 30, pitch: 250, travel: 0, sensorType: 'PNP', headY: 0 },
     stats: { prints: 0, products: 0, missed: 0 },
     prints: [],
     lastPrintAt: 0,
@@ -207,14 +207,14 @@ export function printOnce(s, cause = 'PHOTOCELL') {
   }
   const m = s.messages[s.activeMessage]
   const now = rtcNow(s.rtcOffset)
-  const r = rasterMessage(m, { now, opvars: s.opvars, v24: s.hw.v24 })
+  const r = rasterMessage(m, printCtx(s, now))
   let bits = ''
   for (const col of r.cols) for (const d of col) bits += d ? '1' : '0'
   const g = printGeometry(s)
   const quality = s.live.phaseOk ? (s.faults.SEDIMENT ? 0.75 : 1) : 0.55
   const counterBefore = m.counter.value
   const repeat = Math.max(1, m.params.repeat || 1)
-  s.prints.unshift({ id: s.stats.prints + 1, t: Date.now(), w: r.width, h: r.height, bits, ...g, quality, repeat, msg: m.name, lines: r.lineCount })
+  s.prints.unshift({ id: s.stats.prints + 1, t: Date.now(), w: r.width, h: r.height, bits, ...g, quality, repeat, msg: m.name, lines: r.lineCount, flipX: m.params.sense === 'INVERSO', flipY: Boolean(m.params.inv), delay: m.params.delayFwd ?? 50, headY: s.line.headY || 0 })
   s.prints = s.prints.slice(0, 5)
   s.stats.prints += repeat
   s.lastPrintAt = Date.now()
@@ -232,7 +232,7 @@ export function printOnce(s, cause = 'PHOTOCELL') {
       c.value = v
     }
   }
-  pushEvent(s, 'PRINT', { cause, msg: m.name, counterBefore, counterAfter: c.value, ...g, quality })
+  pushEvent(s, 'PRINT', { cause, msg: m.name, counterBefore, counterAfter: c.value, ...g, quality, flipX: m.params.sense === 'INVERSO', flipY: Boolean(m.params.inv), delay: m.params.delayFwd ?? 50, w: r.width, h: r.height })
   return true
 }
 
