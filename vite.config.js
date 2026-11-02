@@ -7,11 +7,24 @@ const base = process.env.BASE || './'
 // start_url/scope/id absolutos cuando se publica en subcarpeta: evita que el icono
 // instalado no abra en algunos lanzadores Android (WebAPK) por rutas relativas.
 const appUrl = base === './' ? '.' : base
+// Identidad nueva de la app instalada (v4): se instala como un icono nuevo, sin heredar el anterior.
+const APP_ID = base === './' ? './?app=4' : `${base}?app=4`
+const BUILD = String(Date.now())
+
+// version.json (fuera de la caché del service worker) para forzar la actualización
+const versionFile = () => ({
+  name: 'version-file',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ build: BUILD }) })
+  },
+})
 
 export default defineConfig({
   base,
+  define: { __BUILD__: JSON.stringify(BUILD) },
   plugins: [
     react(),
+    versionFile(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
@@ -21,8 +34,8 @@ export default defineConfig({
         short_name: 'CIJ Trainer',
         description: 'Entrenamiento guiado, codificación y misiones con el panel real de la Markem-Imaje 9040 (monochorro y bichorro).',
         lang: 'es',
-        id: appUrl,
-        start_url: appUrl,
+        id: APP_ID,
+        start_url: APP_ID,
         scope: appUrl,
         // 'standalone' es el modo con mejor compatibilidad; la app pide pantalla
         // completa por sí misma al primer toque.

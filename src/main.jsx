@@ -37,6 +37,33 @@ class ErrorBoundary extends Component {
   }
 }
 
+// Actualización forzada: si el servidor tiene una versión distinta a la que corre,
+// se borran el service worker y la caché y se recarga (una sola vez por versión).
+async function forceUpdate() {
+  try {
+    const r = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' })
+    if (!r.ok) return
+    const { build } = await r.json()
+    const key = `cij-healed-${build}`
+    if (build === __BUILD__ || sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    const regs = (await navigator.serviceWorker?.getRegistrations?.()) || []
+    await Promise.all(regs.map((g) => g.unregister()))
+    if (window.caches) await Promise.all((await caches.keys()).map((k) => caches.delete(k)))
+    location.reload()
+  } catch {
+    /* sin conexión: se usa la versión guardada */
+  }
+}
+forceUpdate()
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && forceUpdate())
+window.__forceUpdate = async () => {
+  const regs = (await navigator.serviceWorker?.getRegistrations?.()) || []
+  await Promise.all(regs.map((g) => g.unregister()))
+  if (window.caches) await Promise.all((await caches.keys()).map((k) => caches.delete(k)))
+  location.replace(`${location.pathname}?app=4&t=${Date.now()}`)
+}
+
 // Instalación como app: se guarda el aviso del navegador para el botón «Instalar» del menú.
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault()

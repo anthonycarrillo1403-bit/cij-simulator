@@ -86,7 +86,7 @@ function InstallBar() {
       </div>
       {help && (
         <div className="mt-1 text-sky-100/90">
-          1) Si ya tienes un icono «CIJ Trainer» que no abre, <b>mantenlo presionado › Desinstalar / Quitar</b>. 2) Abre este enlace en <b>Chrome</b>. 3) Menú <b>⋮</b> › <b>Instalar aplicación</b> (o «Agregar a pantalla principal» › Instalar). 4) Abre la app desde el icono nuevo. En iPhone: Safari › Compartir › «Agregar a inicio».
+          1) <b>Borra el icono viejo</b> «CIJ Trainer» (mantenlo presionado › Desinstalar / Quitar). 2) Abre este enlace en <b>Chrome</b>. 3) Menú <b>⋮</b> › <b>Instalar aplicación</b> (o «Agregar a pantalla principal» › Instalar). 4) Abre la app desde el icono nuevo. En iPhone: Safari › Compartir › «Agregar a inicio».
         </div>
       )}
     </div>
@@ -166,7 +166,10 @@ export default function Home() {
       </div>
 
       <div className="flex items-center gap-2 text-[11px] text-slate-400">
-        <span>Progreso guardado en este teléfono.</span>
+        <span>Progreso guardado en este teléfono · versión {__BUILD__.slice(-6)}</span>
+        <button type="button" className="underline" onClick={() => window.__forceUpdate?.()}>
+          Forzar actualización
+        </button>
         {!confirmReset ? (
           <button type="button" className="ml-auto underline" onClick={() => setConfirmReset(true)}>
             Borrar progreso
