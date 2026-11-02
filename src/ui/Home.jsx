@@ -52,6 +52,9 @@ function BigButton({ n, title, sub, onClick, color, locked, progress }) {
   )
 }
 
+const UA = navigator.userAgent || ''
+const inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)|Telegram/i.test(UA)
+const ios = /iPhone|iPad|iPod/i.test(UA)
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || window.navigator.standalone
 
 // Botón para instalar la app con su icono (o instrucciones si el navegador no lo ofrece)
@@ -84,9 +87,15 @@ function InstallBar() {
           {canPrompt ? 'Instalar app' : '¿Cómo instalar?'}
         </button>
       </div>
-      {help && (
+      {(help || !canPrompt) && (
         <div className="mt-1 text-sky-100/90">
-          1) <b>Borra el icono viejo</b> «CIJ Trainer» (mantenlo presionado › Desinstalar / Quitar). 2) Abre este enlace en <b>Chrome</b>. 3) Menú <b>⋮</b> › <b>Instalar aplicación</b> (o «Agregar a pantalla principal» › Instalar). 4) Abre la app desde el icono nuevo. En iPhone: Safari › Compartir › «Agregar a inicio».
+          {inApp ? (
+            <><b>Estás dentro de otra app (WhatsApp, Messenger…): desde aquí no se puede instalar.</b> Toca el menú ⋮ (arriba a la derecha) › <b>«Abrir en Chrome»</b> / «Abrir en el navegador», o copia el enlace y pégalo en Chrome.</>
+          ) : ios ? (
+            <>iPhone: abre el enlace en <b>Safari</b> › botón <b>Compartir</b> (cuadro con flecha ↑) › <b>«Agregar a inicio»</b> › Agregar.</>
+          ) : (
+            <>1) Borra el icono viejo «CIJ Trainer» si lo tienes. 2) En <b>Chrome</b>: menú <b>⋮</b> (arriba a la derecha) › <b>«Agregar a la pantalla principal»</b> o «Instalar aplicación» › <b>Instalar</b>. En Samsung Internet: menú ☰ › «Añadir página a» › Pantalla de inicio.</>
+          )}
         </div>
       )}
     </div>
